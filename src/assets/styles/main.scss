@@ -1,0 +1,168 @@
+// ===========================================
+// HAFIZ FURSAN - Main Stylesheet
+// ===========================================
+
+// CSS Custom Properties
+:root {
+  --color-primary: #{$color-primary};
+  --color-primary-dark: #{$color-primary-dark};
+  --color-primary-light: #{$color-primary-light};
+  --color-primary-lighter: #{$color-primary-lighter};
+  --color-secondary: #{$color-secondary};
+  --color-background: #{$color-background};
+  --color-background-card: #{$color-background-card};
+  --color-background-input: #{$color-background-input};
+  --color-text-primary: #{$color-text-primary};
+  --color-text-secondary: #{$color-text-secondary};
+  --color-text-muted: #{$color-text-muted};
+  --color-text-inverse: #{$color-text-inverse};
+  --color-border: #{$color-border};
+  --color-error: #{$color-error};
+  --color-success: #{$color-success};
+  --font-family: #{$font-family-arabic};
+  --transition-fast: #{$transition-fast};
+  --transition-normal: #{$transition-normal};
+}
+
+// Reset
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  
+  @include sm-max {
+    font-size: 14px;
+  }
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: $font-size-base;
+  font-weight: $font-weight-regular;
+  line-height: $line-height-normal;
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  direction: rtl;
+}
+
+[dir="rtl"] {
+  text-align: right;
+}
+
+// Typography
+h1, h2, h3, h4 {
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+}
+
+h1 {
+  font-size: $font-size-4xl;
+  
+  @include sm-max {
+    font-size: $font-size-3xl;
+  }
+}
+
+h2 {
+  font-size: $font-size-3xl;
+  
+  @include sm-max {
+    font-size: $font-size-2xl;
+  }
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+  
+  &:hover {
+    color: var(--color-primary-dark);
+  }
+}
+
+button {
+  font-family: var(--font-family);
+  cursor: pointer;
+}
+
+input,
+textarea,
+select {
+  font-family: var(--font-family);
+}
+
+// Animations
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+// Selection
+::selection {
+  background-color: rgba($color-primary, 0.2);
+  color: var(--color-text-primary);
+}
+
+// Scrollbar
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: $radius-full;
+  
+  &:hover {
+    background: var(--color-text-muted);
+  }
+}

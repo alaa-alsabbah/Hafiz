@@ -1,0 +1,89 @@
+// ===========================================
+// HAFIZ FURSAN - SCSS Mixins
+// ===========================================
+
+// Responsive Breakpoints
+@mixin sm {
+  @media (min-width: $breakpoint-sm) {
+    @content;
+  }
+}
+
+@mixin md {
+  @media (min-width: $breakpoint-md) {
+    @content;
+  }
+}
+
+@mixin lg {
+  @media (min-width: $breakpoint-lg) {
+    @content;
+  }
+}
+
+@mixin xl {
+  @media (min-width: $breakpoint-xl) {
+    @content;
+  }
+}
+
+@mixin sm-max {
+  @media (max-width: #{$breakpoint-sm - 1px}) {
+    @content;
+  }
+}
+
+@mixin md-max {
+  @media (max-width: #{$breakpoint-md - 1px}) {
+    @content;
+  }
+}
+
+@mixin lg-max {
+  @media (max-width: #{$breakpoint-lg - 1px}) {
+    @content;
+  }
+}
+
+// Flexbox helpers
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// Transitions
+@mixin transition($properties: all, $duration: $transition-normal) {
+  transition: $properties $duration;
+}
+
+// Focus styles
+@mixin focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba($color-primary, 0.2);
+}
+
+// Button base
+@mixin button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-2;
+  font-family: $font-family-arabic;
+  font-weight: $font-weight-bold;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  border-radius: $radius-lg;
+  @include transition(all);
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
