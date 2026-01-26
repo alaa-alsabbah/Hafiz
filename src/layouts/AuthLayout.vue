@@ -13,7 +13,7 @@ import loginImage from '@/assets/img/loginImage.png'
           <div class="auth-layout__circle auth-layout__circle--2"></div>
           <div class="auth-layout__circle auth-layout__circle--3"></div>
         </div>
-        
+           
         <!-- Image -->
         <div class="auth-layout__illustration">
           <img :src="loginImage" alt="طفل يقرأ القرآن" class="auth-layout__image" />
