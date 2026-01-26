@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useValidation, rules } from '@/composables/useValidation'
 import { BaseInput, BaseButton, BaseCheckbox } from '@/components/ui'
 import { IconMail, IconLock, IconArrowLeft } from '@/components/icons'
 import AppLogo from '@/components/common/AppLogo.vue'
-import AuthLayout from '@/layouts/AuthLayout.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -43,7 +42,19 @@ async function handleSubmit(): Promise<void> {
     })
     
     if (result.success) {
-      router.push({ name: 'dashboard' })
+      // Get user from result or store (result.user is more reliable)
+      const user = result.user || authStore.currentUser
+      
+      // Redirect based on user role
+      if (user?.role === 'teacher') {
+        router.push({ name: 'teacher-dashboard' })
+      } else if (user?.role === 'student') {
+        // If student role exists, redirect to student dashboard
+        router.push({ name: 'dashboard' })
+      } else {
+        // Default to home for other roles or no role
+        router.push({ name: 'home' })
+      }
     }
   } finally {
     isSubmitting.value = false
@@ -56,8 +67,7 @@ function goToForgotPassword(): void {
 </script>
 
 <template>
-  <AuthLayout>
-    <div class="login-view">
+  <div class="login-view">
       <div class="login-view__logo">
         <AppLogo size="lg" />
       </div>
@@ -120,12 +130,11 @@ function goToForgotPassword(): void {
         </button>
       </form>
       
-      <button type="button" class="login-view__back-link" @click="router.push('/')">
-        <IconArrowLeft class="login-view__back-icon" />
-        <span>العودة إلى الصفحة الرئيسية</span>
-      </button>
-    </div>
-  </AuthLayout>
+    <button type="button" class="login-view__back-link" @click="router.push('/')">
+      <IconArrowLeft class="login-view__back-icon" />
+      <span>العودة إلى الصفحة الرئيسية</span>
+    </button>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -178,8 +187,8 @@ function goToForgotPassword(): void {
   
   &__error {
     padding: $spacing-3 $spacing-4;
-    background-color: rgba($color-error, 0.1);
-    border: 1px solid rgba($color-error, 0.2);
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.2);
     border-radius: $radius-md;
     color: var(--color-error);
     font-size: $font-size-sm;
