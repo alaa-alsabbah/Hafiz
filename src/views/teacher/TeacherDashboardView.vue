@@ -3,10 +3,11 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import NotificationBell from '@/components/ui/NotificationBell.vue'
 import StatCard from '@/components/ui/StatCard.vue'
-import StudentsTable from '@/components/teacher/StudentsTable.vue'
+import { DataTable } from '@/components/common'
 import { 
   getStudents, 
-  getStudentsByProgram
+  getStudentsByProgram,
+  type Student
 } from '@/services/teacher.service'
 import { 
   DASHBOARD_LABELS, 
@@ -39,17 +40,23 @@ const stats = ref({
 const notificationCount = ref(3)
 const hasNotification = ref(true)
 
+// Students data for table
+const students = ref<Student[]>([])
+const studentsLoading = ref(true)
+
 // Fetch all students (total students)
 async function fetchTotalStudents() {
   try {
     const response = await getStudents()
     if (response.success && response.data) {
+      students.value = response.data
       stats.value[StatCardType.TOTAL_STUDENTS].value = response.data.length
     }
   } catch (error) {
     console.error('Error fetching total students:', error)
   } finally {
     stats.value[StatCardType.TOTAL_STUDENTS].loading = false
+    studentsLoading.value = false
   }
 }
 
@@ -175,7 +182,19 @@ onMounted(async () => {
 
     <!-- Students Table Section -->
     <div class="teacher-dashboard__content">
-      <StudentsTable />
+      <DataTable
+        :columns="[
+          { key: 'full_name', label: 'الاسم' },
+          { key: 'email', label: 'البريد الإلكتروني' },
+          { key: 'program', label: 'البرنامج' },
+          { key: 'level', label: 'المستوى' },
+          { key: 'score', label: 'التقييم' }
+        ]"
+        :data="students"
+        :loading="studentsLoading"
+        empty-message="لا توجد بيانات"
+        loading-message="جاري التحميل..."
+      />
     </div>
   </div>
 </template>

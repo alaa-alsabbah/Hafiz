@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import NotificationBell from '@/components/ui/NotificationBell.vue'
 import StatCard from '@/components/ui/StatCard.vue'
-import WeeklyReportTable from '@/components/teacher/WeeklyReportTable.vue'
+import { AttendanceReportTable } from '@/components/common'
 import { 
   getStudents,
   getStudentAttendance,
@@ -207,9 +207,18 @@ onMounted(async () => {
 
     <!-- Weekly Report Table Section -->
     <div class="teacher-weekly-report__content">
-      <WeeklyReportTable 
-        :students="students"
-        :attendance-records="allAttendanceRecords"
+      <AttendanceReportTable 
+        :people="students"
+        :attendance-records="allAttendanceRecords as Map<number | string, any[]>"
+        :columns="[
+          { key: 'student_name', label: WEEKLY_REPORT_LABELS.TABLE.STUDENT },
+          { key: 'program', label: WEEKLY_REPORT_LABELS.TABLE.PROGRAM },
+          { key: 'session', label: WEEKLY_REPORT_LABELS.TABLE.SESSION },
+          { key: 'status', label: WEEKLY_REPORT_LABELS.TABLE.STATUS },
+          { key: 'page_number', label: WEEKLY_REPORT_LABELS.TABLE.LAST_PAGE },
+          { key: 'score', label: WEEKLY_REPORT_LABELS.TABLE.EVALUATION },
+          { key: 'date', label: WEEKLY_REPORT_LABELS.TABLE.DATE }
+        ]"
         :loading="loading"
       />
     </div>

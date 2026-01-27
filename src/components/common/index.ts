@@ -1,0 +1,6 @@
+export { default as AppLogo } from './AppLogo.vue'
+export { default as RegistrationTypeDialog } from './RegistrationTypeDialog.vue'
+export { default as BaseTable } from './BaseTable.vue'
+export { default as BaseFilter } from './BaseFilter.vue'
+export { default as DataTable } from './DataTable.vue'
+export { default as AttendanceReportTable } from './AttendanceReportTable.vue'
