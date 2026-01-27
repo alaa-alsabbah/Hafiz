@@ -5,13 +5,14 @@ import { useAuthStore } from '@/stores/auth'
 import AppLogo from '@/components/common/AppLogo.vue'
 import { NotificationBell } from '@/components/ui'
 import {
-  IconUser,
-  IconCalendar,
-  IconGraduationCap,
   IconLogout,
   IconArrowLeft,
+  IconRefresh,
+  IconTrophy,
+  IconBranch,
+  IconPermission,
 } from '@/components/icons'
-import { TEACHER_MENU_ITEMS, DASHBOARD_LABELS } from '@/config/teacher.constants'
+import { STUDENT_MENU_ITEMS, STUDENT_LABELS } from '@/config/student.constants'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,24 +24,23 @@ const currentUser = computed(() => authStore.currentUser)
 
 // Import SVG icons
 import gridIcon from '@/assets/img/icons/SquaresFour.svg'
+import tasksIcon from '@/assets/img/icons/dailyTasks.svg'
+import starIcon from '@/assets/img/icons/star.svg'
+import logIcon from '@/assets/img/icons/logs.svg'
 
-// Map icon strings to icon components or SVG paths
-const iconMap: Record<string, any> = {
+// Map icon strings to SVG file paths
+const iconMap: Record<string, string> = {
   grid: gridIcon,
-  user: IconUser,
-  calendar: IconCalendar,
-  'graduation-cap': IconGraduationCap,
+  tasks: tasksIcon,
+  star: starIcon,
+  log: logIcon,
 }
 
 const menuItems = computed(() =>
-  TEACHER_MENU_ITEMS.map((item) => {
-    const icon = iconMap[item.icon] || gridIcon
-    return {
-      ...item,
-      icon,
-      isSvg: typeof icon === 'string',
-    } as typeof item & { icon: any; isSvg: boolean }
-  })
+  STUDENT_MENU_ITEMS.map((item) => ({
+    ...item,
+    iconPath: iconMap[item.icon] || iconMap.grid,
+  }))
 )
 
 const isActiveRoute = (routeName: string) => {
@@ -87,22 +87,22 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="teacher-layout" :class="{ 'teacher-layout--sidebar-open': isSidebarOpen }">
+  <div class="student-layout" :class="{ 'student-layout--sidebar-open': isSidebarOpen }">
     <!-- Overlay -->
     <Transition name="overlay">
       <div
         v-if="isSidebarOpen"
-        class="teacher-layout__overlay"
+        class="student-layout__overlay"
         @click="closeSidebar"
       />
     </Transition>
 
     <!-- Sidebar -->
-    <aside class="teacher-layout__sidebar">
-      <div class="teacher-layout__sidebar-header">
+    <aside class="student-layout__sidebar">
+      <div class="student-layout__sidebar-header">
         <AppLogo size="md" />
         <button
-          class="teacher-layout__close-btn"
+          class="student-layout__close-btn"
           @click="closeSidebar"
           aria-label="إغلاق القائمة"
         >
@@ -110,75 +110,79 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <nav class="teacher-layout__nav">
+      <nav class="student-layout__nav">
         <button
           v-for="item in menuItems"
           :key="item.name"
-          class="teacher-layout__nav-item"
-          :class="{ 'teacher-layout__nav-item--active': isActiveRoute(item.name) }"
+          class="student-layout__nav-item"
+          :class="{ 'student-layout__nav-item--active': isActiveRoute(item.name) }"
           @click="navigateTo(item.name)"
         >
-          <img
-            v-if="item.isSvg"
-            :src="item.icon"
-            :alt="item.label"
-            class="teacher-layout__nav-icon"
-          />
-          <component
-            v-else
-            :is="item.icon"
-            class="teacher-layout__nav-icon"
-          />
-          <span class="teacher-layout__nav-label">
+          <img :src="item.iconPath" :alt="item.label" class="student-layout__nav-icon" />
+          <span class="student-layout__nav-label">
             {{ item.label }}
           </span>
         </button>
       </nav>
 
       <!-- User Profile at Bottom -->
-      <div class="teacher-layout__user-profile">
-        <div class="teacher-layout__user-avatar">
+      <div class="student-layout__user-profile">
+        <div class="student-layout__user-avatar">
           <span>
-            {{ currentUser?.name?.charAt(0) || 'م' }}
+            {{ currentUser?.name?.charAt(0) || 'ط' }}
           </span>
         </div>
-        <div class="teacher-layout__user-name">
-          {{ currentUser?.name || 'المعلم' }}
+        <div class="student-layout__user-name">
+          {{ currentUser?.name || 'طالب' }}
         </div>
-        <button class="teacher-layout__logout-btn" @click="handleLogout" aria-label="تسجيل الخروج">
-          <IconLogout class="teacher-layout__logout-icon" />
+        <button class="student-layout__logout-btn" @click="handleLogout" aria-label="تسجيل الخروج">
+          <IconLogout class="student-layout__logout-icon" />
         </button>
       </div>
     </aside>
 
     <!-- Main area -->
-    <div class="teacher-layout__main">
-      <header class="teacher-layout__header">
-        <div class="teacher-layout__header-content">
-          <h1 class="teacher-layout__header-title">
-            {{ DASHBOARD_LABELS.PAGE_TITLE }}
+    <div class="student-layout__main">
+      <header class="student-layout__header">
+        <div class="student-layout__header-content">
+          <h1 class="student-layout__header-title">
+            {{ STUDENT_LABELS.PAGE_TITLE }}
           </h1>
 
-          <div class="teacher-layout__header-left">
+          <div class="student-layout__header-left">
             <button
-              class="teacher-layout__toggle"
+              class="student-layout__toggle"
               type="button"
               aria-label="Toggle sidebar"
               @click="toggleSidebar"
             >
-              <span class="teacher-layout__toggle-line" />
-              <span class="teacher-layout__toggle-line" />
-              <span class="teacher-layout__toggle-line" />
+              <span class="student-layout__toggle-line" />
+              <span class="student-layout__toggle-line" />
+              <span class="student-layout__toggle-line" />
             </button>
 
-            <div class="teacher-layout__header-actions">
+            <div class="student-layout__header-actions">
+              <button class="student-layout__action-btn" aria-label="Branch">
+                <IconBranch />
+              </button>
+              <button class="student-layout__action-btn" aria-label="Refresh">
+                <IconRefresh />
+              </button>
+              <button class="student-layout__action-btn student-layout__action-btn--with-label" aria-label="Leaderboard">
+                <IconTrophy />
+                <span>{{ STUDENT_LABELS.LEADERBOARD }}</span>
+              </button>
+              <button class="student-layout__action-btn student-layout__action-btn--with-label" aria-label="Request Permission">
+                <IconPermission />
+                <span>{{ STUDENT_LABELS.REQUEST_PERMISSION }}</span>
+              </button>
               <NotificationBell :count="3" :has-notification="true" />
             </div>
           </div>
         </div>
       </header>
 
-      <main class="teacher-layout__content">
+      <main class="student-layout__content">
         <slot />
       </main>
     </div>
@@ -186,7 +190,7 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-.teacher-layout {
+.student-layout {
   min-height: 100vh;
   width: 100%;
   max-width: 100vw;
@@ -238,7 +242,7 @@ onUnmounted(() => {
 
   &--sidebar-open {
     @include sm-max {
-      .teacher-layout__sidebar {
+      .student-layout__sidebar {
         transform: translateX(0) !important;
       }
     }
@@ -310,7 +314,7 @@ onUnmounted(() => {
       color: #fff;
       box-shadow: $shadow-sm;
       
-      .teacher-layout__nav-icon {
+      .student-layout__nav-icon {
         filter: brightness(0) invert(1);
       }
     }
@@ -321,7 +325,7 @@ onUnmounted(() => {
     height: 20px;
     flex-shrink: 0;
     display: block;
-    transition: filter $transition-fast, color $transition-fast;
+    transition: filter $transition-fast;
   }
 
   &__nav-label {
@@ -404,6 +408,7 @@ onUnmounted(() => {
     @include sm-max {
       z-index: 100;
       margin-top: 0;
+      padding-top: 0;
     }
   }
 
@@ -415,7 +420,6 @@ onUnmounted(() => {
     position: relative;
     background-color: #fff;
     border-top-right-radius: $radius-2xl;
-    direction: rtl;
     gap: $spacing-4;
     flex-wrap: wrap;
 
@@ -429,7 +433,6 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     gap: $spacing-3;
-    direction: ltr;
     flex-wrap: wrap;
 
     @include sm-max {
@@ -447,6 +450,66 @@ onUnmounted(() => {
 
     @include sm-max {
       gap: $spacing-1;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+  }
+
+  &__action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: $spacing-2;
+    border-radius: $radius-full;
+    border: none;
+    background-color: rgba(224, 246, 255, 1);
+    cursor: pointer;
+    transition: all $transition-fast;
+    min-width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+
+    &:hover {
+      background-color: rgba(224, 246, 255, 0.8);
+    }
+
+    svg,
+    img {
+      width: 18px;
+      height: 18px;
+    }
+
+    &--with-label {
+      padding: $spacing-2 $spacing-4;
+      gap: $spacing-2;
+      min-width: auto;
+      height: auto;
+
+      @include sm-max {
+        padding: $spacing-2;
+        
+        span {
+          display: none;
+        }
+      }
+
+      span {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-medium;
+        white-space: nowrap;
+      }
+    }
+
+    @include sm-max {
+      min-width: 36px;
+      height: 36px;
+      padding: $spacing-1;
     }
   }
 
@@ -456,22 +519,8 @@ onUnmounted(() => {
     color: var(--color-text-primary);
     margin: 0;
     text-align: right;
-    flex: 1;
-    min-width: 0;
-
-    @include sm-max {
-      font-size: $font-size-xl;
-      order: 1;
-      width: 100%;
-      margin-bottom: $spacing-2;
-    }
   }
 
-  &__header-line {
-    height: 3px;
-    background-color: var(--color-primary);
-    width: 100%;
-  }
 
   &__toggle {
     display: none;
@@ -517,4 +566,3 @@ onUnmounted(() => {
   opacity: 0;
 }
 </style>
-

@@ -4,6 +4,8 @@ import { useRoute, RouterView } from 'vue-router'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TeacherLayout from '@/layouts/TeacherLayout.vue'
+import StudentLayout from '@/layouts/StudentLayout.vue'
+import AdminLayout from '@/layouts/AdminLayout.vue'
 
 const route = useRoute()
 
@@ -12,8 +14,12 @@ const layout = computed(() => {
   
   if (layoutType === 'auth') {
     return AuthLayout
+  } else if (layoutType === 'student') {
+    return StudentLayout
   } else if (layoutType === 'teacher') {
     return TeacherLayout
+  } else if (layoutType === 'admin') {
+    return AdminLayout
   } else {
     return DefaultLayout
   }

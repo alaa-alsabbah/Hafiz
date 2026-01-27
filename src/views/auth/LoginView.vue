@@ -46,11 +46,12 @@ async function handleSubmit(): Promise<void> {
       const user = result.user || authStore.currentUser
       
       // Redirect based on user role
-      if (user?.role === 'teacher') {
+      if (user?.role === 'student') {
+        router.push({ name: 'student-dashboard' })
+      } else if (user?.role === 'teacher') {
         router.push({ name: 'teacher-dashboard' })
-      } else if (user?.role === 'student') {
-        // If student role exists, redirect to student dashboard
-        router.push({ name: 'dashboard' })
+      } else if (user?.role === 'admin') {
+        router.push({ name: 'admin-dashboard' })
       } else {
         // Default to home for other roles or no role
         router.push({ name: 'home' })

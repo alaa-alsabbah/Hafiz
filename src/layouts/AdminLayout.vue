@@ -11,7 +11,10 @@ import {
   IconLogout,
   IconArrowLeft,
 } from '@/components/icons'
-import { TEACHER_MENU_ITEMS, DASHBOARD_LABELS } from '@/config/teacher.constants'
+import { ADMIN_MENU_ITEMS, ADMIN_LABELS } from '@/config/admin.constants'
+
+// Import SVG icons
+import gridIcon from '@/assets/img/icons/SquaresFour.svg'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,9 +23,6 @@ const authStore = useAuthStore()
 const isSidebarOpen = ref(false)
 
 const currentUser = computed(() => authStore.currentUser)
-
-// Import SVG icons
-import gridIcon from '@/assets/img/icons/SquaresFour.svg'
 
 // Map icon strings to icon components or SVG paths
 const iconMap: Record<string, any> = {
@@ -33,13 +33,13 @@ const iconMap: Record<string, any> = {
 }
 
 const menuItems = computed(() =>
-  TEACHER_MENU_ITEMS.map((item) => {
+  ADMIN_MENU_ITEMS.map((item) => {
     const icon = iconMap[item.icon] || gridIcon
     return {
       ...item,
       icon,
       isSvg: typeof icon === 'string',
-    } as typeof item & { icon: any; isSvg: boolean }
+    }
   })
 )
 
@@ -87,22 +87,22 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="teacher-layout" :class="{ 'teacher-layout--sidebar-open': isSidebarOpen }">
+  <div class="admin-layout" :class="{ 'admin-layout--sidebar-open': isSidebarOpen }">
     <!-- Overlay -->
     <Transition name="overlay">
       <div
         v-if="isSidebarOpen"
-        class="teacher-layout__overlay"
+        class="admin-layout__overlay"
         @click="closeSidebar"
       />
     </Transition>
 
     <!-- Sidebar -->
-    <aside class="teacher-layout__sidebar">
-      <div class="teacher-layout__sidebar-header">
+    <aside class="admin-layout__sidebar">
+      <div class="admin-layout__sidebar-header">
         <AppLogo size="md" />
         <button
-          class="teacher-layout__close-btn"
+          class="admin-layout__close-btn"
           @click="closeSidebar"
           aria-label="إغلاق القائمة"
         >
@@ -110,75 +110,76 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <nav class="teacher-layout__nav">
+      <nav class="admin-layout__nav">
         <button
           v-for="item in menuItems"
           :key="item.name"
-          class="teacher-layout__nav-item"
-          :class="{ 'teacher-layout__nav-item--active': isActiveRoute(item.name) }"
+          class="admin-layout__nav-item"
+          :class="{ 'admin-layout__nav-item--active': isActiveRoute(item.name) }"
           @click="navigateTo(item.name)"
         >
           <img
             v-if="item.isSvg"
             :src="item.icon"
             :alt="item.label"
-            class="teacher-layout__nav-icon"
+            class="admin-layout__nav-icon"
           />
           <component
             v-else
             :is="item.icon"
-            class="teacher-layout__nav-icon"
+            class="admin-layout__nav-icon"
           />
-          <span class="teacher-layout__nav-label">
+          <span class="admin-layout__nav-label">
             {{ item.label }}
           </span>
         </button>
       </nav>
 
       <!-- User Profile at Bottom -->
-      <div class="teacher-layout__user-profile">
-        <div class="teacher-layout__user-avatar">
+      <div class="admin-layout__user-profile">
+        <div class="admin-layout__user-avatar">
           <span>
             {{ currentUser?.name?.charAt(0) || 'م' }}
           </span>
         </div>
-        <div class="teacher-layout__user-name">
-          {{ currentUser?.name || 'المعلم' }}
+        <div class="admin-layout__user-name">
+          {{ currentUser?.name || 'مسؤول' }}
         </div>
-        <button class="teacher-layout__logout-btn" @click="handleLogout" aria-label="تسجيل الخروج">
-          <IconLogout class="teacher-layout__logout-icon" />
+        <button class="admin-layout__logout-btn" @click="handleLogout" aria-label="تسجيل الخروج">
+          <IconLogout class="admin-layout__logout-icon" />
         </button>
       </div>
     </aside>
 
     <!-- Main area -->
-    <div class="teacher-layout__main">
-      <header class="teacher-layout__header">
-        <div class="teacher-layout__header-content">
-          <h1 class="teacher-layout__header-title">
-            {{ DASHBOARD_LABELS.PAGE_TITLE }}
+    <div class="admin-layout__main">
+      <header class="admin-layout__header">
+        <div class="admin-layout__header-content">
+          <h1 class="admin-layout__header-title">
+            {{ ADMIN_LABELS.PAGE_TITLE }}
           </h1>
 
-          <div class="teacher-layout__header-left">
+          <div class="admin-layout__header-left">
             <button
-              class="teacher-layout__toggle"
+              class="admin-layout__toggle"
               type="button"
               aria-label="Toggle sidebar"
               @click="toggleSidebar"
             >
-              <span class="teacher-layout__toggle-line" />
-              <span class="teacher-layout__toggle-line" />
-              <span class="teacher-layout__toggle-line" />
+              <span class="admin-layout__toggle-line" />
+              <span class="admin-layout__toggle-line" />
+              <span class="admin-layout__toggle-line" />
             </button>
 
-            <div class="teacher-layout__header-actions">
+            <div class="admin-layout__header-actions">
               <NotificationBell :count="3" :has-notification="true" />
             </div>
           </div>
         </div>
+        <div class="admin-layout__header-line"></div>
       </header>
 
-      <main class="teacher-layout__content">
+      <main class="admin-layout__content">
         <slot />
       </main>
     </div>
@@ -186,7 +187,7 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-.teacher-layout {
+.admin-layout {
   min-height: 100vh;
   width: 100%;
   max-width: 100vw;
@@ -232,13 +233,12 @@ onUnmounted(() => {
       transform: translateX(100%);
       box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
       will-change: transform;
-      z-index: 1000;
     }
   }
 
   &--sidebar-open {
     @include sm-max {
-      .teacher-layout__sidebar {
+      .admin-layout__sidebar {
         transform: translateX(0) !important;
       }
     }
@@ -310,7 +310,7 @@ onUnmounted(() => {
       color: #fff;
       box-shadow: $shadow-sm;
       
-      .teacher-layout__nav-icon {
+      .admin-layout__nav-icon {
         filter: brightness(0) invert(1);
       }
     }
@@ -386,24 +386,17 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    padding-top: $spacing-4;
-
-    @include sm-max {
-      padding-top: 0;
-    }
   }
 
   &__header {
-    background-color: transparent;
+    background-color: #fff;
     position: sticky;
     top: 0;
     z-index: var(--sidebar-z-index);
     border-bottom: none;
-    margin-top: -$spacing-4;
 
     @include sm-max {
       z-index: 100;
-      margin-top: 0;
     }
   }
 
@@ -416,13 +409,6 @@ onUnmounted(() => {
     background-color: #fff;
     border-top-right-radius: $radius-2xl;
     direction: rtl;
-    gap: $spacing-4;
-    flex-wrap: wrap;
-
-    @include sm-max {
-      padding: $spacing-3 $spacing-4;
-      gap: $spacing-2;
-    }
   }
 
   &__header-left {
@@ -430,24 +416,12 @@ onUnmounted(() => {
     align-items: center;
     gap: $spacing-3;
     direction: ltr;
-    flex-wrap: wrap;
-
-    @include sm-max {
-      gap: $spacing-2;
-      width: 100%;
-      order: 2;
-    }
   }
 
   &__header-actions {
     display: flex;
     align-items: center;
     gap: $spacing-2;
-    flex-wrap: wrap;
-
-    @include sm-max {
-      gap: $spacing-1;
-    }
   }
 
   &__header-title {
@@ -456,15 +430,6 @@ onUnmounted(() => {
     color: var(--color-text-primary);
     margin: 0;
     text-align: right;
-    flex: 1;
-    min-width: 0;
-
-    @include sm-max {
-      font-size: $font-size-xl;
-      order: 1;
-      width: 100%;
-      margin-bottom: $spacing-2;
-    }
   }
 
   &__header-line {
@@ -498,7 +463,7 @@ onUnmounted(() => {
   &__content {
     flex: 1;
     padding: $spacing-6;
-    background-color: $color-background-card;
+    background-color: var(--color-background);
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
@@ -517,4 +482,3 @@ onUnmounted(() => {
   opacity: 0;
 }
 </style>
-

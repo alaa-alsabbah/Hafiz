@@ -13,7 +13,24 @@ const STUDENT_API_ENDPOINTS = {
 // Student types
 export interface StudentDashboard {
   id: number
-  // Define based on API response
+  full_name: string
+  email: string
+  program: string
+  program_track: string
+  level: string
+  count_leaves: number
+  tasks: Array<{
+    id: number
+    student_id: number
+    from_to: string
+    listening: string
+    repetition: string
+    link: string
+    review: string
+    due_date: string
+    created_at: string
+    completed: boolean
+  }>
 }
 
 export interface DailyTask {

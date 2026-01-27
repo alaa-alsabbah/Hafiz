@@ -45,7 +45,7 @@ withDefaults(defineProps<Props>(), {
   padding: var(--spacing-6);
   box-shadow: var(--shadow-md);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

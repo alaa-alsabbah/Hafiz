@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import bgVideoImage from '@/assets/img/bgVedio.png'
 import childImage from '@/assets/img/child.png'
 import humanImage from '@/assets/img/human.png'
 import wordImage from '@/assets/img/word.png'
 import hiUserImage from '@/assets/img/hiUser.png'
 import RegistrationTypeDialog from '@/components/common/RegistrationTypeDialog.vue'
-
-const router = useRouter()
 const selectedProgram = ref<'hafiz' | 'fursan'>('hafiz')
 const showRegistrationDialog = ref(false)
 
@@ -16,9 +13,6 @@ function openRegistrationDialog() {
   showRegistrationDialog.value = true
 }
 
-function goToLogin() {
-  router.push({ name: 'login' })
-}
 
 // Stats data
 const stats = [

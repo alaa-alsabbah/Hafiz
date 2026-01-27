@@ -74,6 +74,35 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/DashboardView.vue'), // placeholder
     meta: { requiresAuth: true, layout: 'default' }
   },
+  // Student routes (uses StudentLayout)
+  {
+    path: '/student',
+    redirect: '/student/dashboard'
+  },
+  {
+    path: '/student/dashboard',
+    name: 'student-dashboard',
+    component: () => import('@/views/student/StudentDashboardView.vue'),
+    meta: { requiresAuth: true, requiresRole: 'student', layout: 'student' }
+  },
+  {
+    path: '/student/daily-tasks',
+    name: 'student-daily-tasks',
+    component: () => import('@/views/student/StudentDailyTasksView.vue'),
+    meta: { requiresAuth: true, requiresRole: 'student', layout: 'student' }
+  },
+  {
+    path: '/student/level-details',
+    name: 'student-level-details',
+    component: () => import('@/views/student/StudentLevelDetailsView.vue'),
+    meta: { requiresAuth: true, requiresRole: 'student', layout: 'student' }
+  },
+  {
+    path: '/student/activity-log',
+    name: 'student-activity-log',
+    component: () => import('@/views/student/StudentActivityLogView.vue'),
+    meta: { requiresAuth: true, requiresRole: 'student', layout: 'student' }
+  },
   // Teacher routes (uses TeacherLayout)
   {
     path: '/teacher',
@@ -146,6 +175,10 @@ router.beforeEach((to, from, next) => {
   console.log('Router navigation:', { from: from.path, to: to.path, toName: to.name })
   const token = localStorage.getItem('access_token')
   const authStore = useAuthStore()
+  
+  // Ensure user is loaded from storage if token exists but user is not loaded
+  authStore.initializeUser()
+  
   const user = authStore.currentUser
   
   // Check if route requires authentication
@@ -159,8 +192,12 @@ router.beforeEach((to, from, next) => {
     const requiredRole = to.meta.requiresRole as string
     if (user.role !== requiredRole) {
       // Redirect based on user role
-      if (user.role === 'teacher') {
+      if (user.role === 'student') {
+        next({ name: 'student-dashboard' })
+      } else if (user.role === 'teacher') {
         next({ name: 'teacher-dashboard' })
+      } else if (user.role === 'admin') {
+        next({ name: 'admin-dashboard' })
       } else {
         next({ name: 'home' })
       }
@@ -171,8 +208,12 @@ router.beforeEach((to, from, next) => {
   // Redirect authenticated users away from guest pages
   if (to.meta.guest && token && to.name !== 'register') {
     // Redirect based on role
-    if (user?.role === 'teacher') {
+    if (user?.role === 'student') {
+      next({ name: 'student-dashboard' })
+    } else if (user?.role === 'teacher') {
       next({ name: 'teacher-dashboard' })
+    } else if (user?.role === 'admin') {
+      next({ name: 'admin-dashboard' })
     } else {
       next({ name: 'home' })
     }

@@ -1,5 +1,11 @@
 // Admin constants and configurations
 
+export enum AdminRoleLabel {
+  STUDENT = 'طالب',
+  TEACHER = 'معلم',
+  ADMIN = 'مسؤول',
+}
+
 export const ADMIN_LABELS = {
   PAGE_TITLE: 'لوحة التحكم',
   STUDENTS: 'الطلاب',
@@ -8,7 +14,8 @@ export const ADMIN_LABELS = {
   PERMISSION: 'الاستئذان',
   EVALUATIONS: 'تقييمات المقابلات',
   TEACHERS: 'المعلمين',
-}
+  LOGOUT: 'تسجيل الخروج',
+} as const
 
 // Admin menu items
 export const ADMIN_MENU_ITEMS = [

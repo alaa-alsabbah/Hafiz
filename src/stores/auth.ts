@@ -6,10 +6,31 @@ import { loginRequest } from '@/services/auth.service'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
-  const user = ref<User | null>(null)
+  const user = ref<User | null>(loadUserFromStorage())
   const token = ref<string | null>(tokenManager.get())
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  // Load user from localStorage on initialization
+  function loadUserFromStorage(): User | null {
+    try {
+      const storedUser = localStorage.getItem('user')
+      if (storedUser) {
+        return JSON.parse(storedUser)
+      }
+    } catch (error) {
+      console.error('Error loading user from storage:', error)
+    }
+    return null
+  }
+
+  function saveUserToStorage(userData: User | null): void {
+    if (userData) {
+      localStorage.setItem('user', JSON.stringify(userData))
+    } else {
+      localStorage.removeItem('user')
+    }
+  }
 
   // Getters
   const isAuthenticated = computed(() => !!token.value)
@@ -29,8 +50,9 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = result.user
       token.value = result.token
 
-      // Persist token for all API calls and router guards
+      // Persist token and user for all API calls and router guards
       tokenManager.set(result.token)
+      saveUserToStorage(result.user)
       
       if (credentials.rememberMe) {
         localStorage.setItem('rememberedEmail', credentials.email)
@@ -52,10 +74,20 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
     token.value = null
     tokenManager.remove()
+    saveUserToStorage(null)
   }
 
   function clearError(): void {
     error.value = null
+  }
+
+  function initializeUser(): void {
+    if (token.value && !user.value) {
+      const loadedUser = loadUserFromStorage()
+      if (loadedUser) {
+        user.value = loadedUser
+      }
+    }
   }
 
   return {
@@ -70,7 +102,8 @@ export const useAuthStore = defineStore('auth', () => {
     // Actions
     login,
     logout,
-    clearError
+    clearError,
+    initializeUser
   }
 })
 

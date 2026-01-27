@@ -132,6 +132,21 @@ export const ATTENDANCE_STATUS_CONFIG = {
   },
 }
 
+export enum TeacherRoleLabel {
+  STUDENT = 'طالب',
+  TEACHER = 'معلم',
+  ADMIN = 'مسؤول',
+}
+
+export const TEACHER_LABELS = {
+  LOGOUT: 'تسجيل الخروج',
+  STUDENTS: 'الطلاب',
+  PRESENTATION_TEST: 'العرض والاختبار',
+  PERMISSION: 'الاستئذان',
+  EVALUATIONS: 'تقييمات المقابلات',
+  TEACHERS: 'المعلمين',
+} as const
+
 // Teacher menu items
 export const TEACHER_MENU_ITEMS = [
   {
@@ -141,7 +156,7 @@ export const TEACHER_MENU_ITEMS = [
     icon: 'grid',
   },
   {
-    label: 'الطلاب',
+    label: TEACHER_LABELS.STUDENTS,
     path: '/teacher/students',
     name: 'teacher-students',
     icon: 'user',
@@ -153,27 +168,27 @@ export const TEACHER_MENU_ITEMS = [
     icon: 'calendar',
   },
   {
-    label: 'العرض والاختبار',
+    label: TEACHER_LABELS.PRESENTATION_TEST,
     path: '/teacher/presentation-test',
     name: 'teacher-presentation-test',
     icon: 'graduation-cap',
   },
   {
-    label: 'الاستئذان',
+    label: TEACHER_LABELS.PERMISSION,
     path: '/teacher/permission',
     name: 'teacher-permission',
     icon: 'calendar',
   },
   {
-    label: 'تقييمات المقابلات',
+    label: TEACHER_LABELS.EVALUATIONS,
     path: '/teacher/evaluations',
     name: 'teacher-evaluations',
     icon: 'calendar',
   },
   {
-    label: 'المعلمين',
+    label: TEACHER_LABELS.TEACHERS,
     path: '/teacher/teachers',
     name: 'teacher-teachers',
     icon: 'user',
   },
-]
+] as const
