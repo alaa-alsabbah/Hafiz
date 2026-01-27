@@ -1,22 +1,46 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, Teleport, Transition } from 'vue'
+import { ref, computed, onMounted, watch, Teleport, Transition } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useValidation, rules } from '@/composables/useValidation'
-import { BaseInput, BaseButton, BaseCheckbox, BaseDatePicker } from '@/components/ui'
+import { BaseInput, BaseButton, BaseCheckbox, BaseDatePicker, BaseSelect, BasePhoneInput } from '@/components/ui'
 import { IconArrowRight } from '@/components/icons'
 import bgVideoImage from '@/assets/img/bgVedio.png'
 import { apiRequest, ApiException } from '@/services/api'
-import { API_BASE_URL } from '@/config/api'
 import { translateErrorCode, translateErrorCodes } from '@/utils/errorTranslations'
+import {
+  getLookups,
+  getRegistrationLookupGroups,
+  type LookupItem,
+} from '@/services/lookups.service'
+import RegistrationTypeDialog from '@/components/common/RegistrationTypeDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
 
-// Get role from query parameter (defaults to 'student')
+// Show dialog if no type is provided
+const showRegistrationDialog = ref(false)
+
+// Get role from query parameter
 const selectedRole = computed(() => {
   const type = route.query.type as string
+  if (!type || (type !== 'teacher' && type !== 'student')) {
+    return null
+  }
   return type === 'teacher' ? 'teacher' : 'student'
 })
+
+// Watch for route changes and show dialog if no type
+watch(
+  () => route.query.type,
+  (type) => {
+    if (!type || (type !== 'teacher' && type !== 'student')) {
+      showRegistrationDialog.value = true
+    } else {
+      showRegistrationDialog.value = false
+    }
+  },
+  { immediate: true }
+)
 
 // Step management
 const currentStep = ref(1)
@@ -36,23 +60,8 @@ const conditions = [
   'الاشتراك الشهر الأول مجاني'
 ]
 
-// Lookups data
-const lookups = ref<Record<string, any[]>>({
-  gender: [],
-  education_level: [],
-  how_did_you_know_us: [],
-  quran_memorization_level: [],
-  has_ijaza: [],
-  program_track: [],
-  interview_time_preference: [],
-  yes_no: [],
-  mastery_percentage: [],
-  experience_years: [],
-  memorized_quran_completely: [
-    { id: 1, code: 'memorized_quran_completely', key: 'yes', value_en: 'Yes, praise be to Allah', value_ar: 'نعم ولله الحمد' },
-    { id: 2, code: 'memorized_quran_completely', key: 'no', value_en: 'No', value_ar: 'لا' }
-  ]
-})
+// Lookups data - using LookupItem type from service
+const lookups = ref<Record<string, LookupItem[]>>({})
 
 const isLoadingLookups = ref(false)
 const lookupError = ref<string | null>(null)
@@ -141,7 +150,8 @@ const { form: teacherStep2Form, errors: teacherStep2Errors, validate: validateTe
     hasIjaza: '',
     experienceYears: '',
     volunteer: '',
-    interviewTime: ''
+    interviewTime: '',
+    interviewDate: ''
   },
   {
     placeOfResidence: [rules.required('مكان السكن مطلوب')],
@@ -149,14 +159,34 @@ const { form: teacherStep2Form, errors: teacherStep2Errors, validate: validateTe
     hasIjaza: [rules.required('هل لديك إجازة أو سند مطلوب')],
     experienceYears: [rules.required('سنوات الخبرة مطلوبة')],
     volunteer: [rules.required('الانضمام مجاناً مطلوب')],
-    interviewTime: [rules.required('الموعد المناسب للمقابلة مطلوب')]
+    interviewTime: [rules.required('الموعد المناسب للمقابلة مطلوب')],
+    interviewDate: [rules.required('تاريخ المقابلة مطلوب')]
   }
 )
+
+// Phone country codes (default to Jordan +962)
+const studentPhoneCountryCode = ref('+962')
+const teacherPhoneCountryCode = ref('+962')
 
 // Appointment calendar state (for student step 4)
 const selectedDate = ref<Date | null>(null)
 const selectedTime = ref<string>('')
-const calendarMonth = ref(new Date())
+const calendarMonth = ref<Date>(new Date())
+
+// Ensure calendarMonth is always initialized when navigating to step 4
+watch(
+  () => currentStep.value,
+  (step) => {
+    if (step === 4 && selectedRole.value === 'student') {
+      if (!calendarMonth.value) {
+        calendarMonth.value = new Date()
+      }
+      // Reset selections when entering calendar view
+      selectedDate.value = null
+      selectedTime.value = ''
+    }
+  }
+)
 
 // Form submission state
 const isSubmitting = ref(false)
@@ -165,62 +195,67 @@ const submitErrors = ref<Record<string, string[]>>({})
 const showSuccessModal = ref(false)
 const showErrorModal = ref(false)
 
-// Fetch lookups from API
-async function fetchLookup(lookupName: string) {
-  try {
-    const response = await fetch(`${API_BASE_URL.replace(/\/$/, '')}/lookups/${lookupName}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json; charset=utf-8',
-        'Content-Type': 'application/json; charset=utf-8'
-      }
-    })
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ${lookupName}`)
-    }
-    
-    const data = await response.json()
-    if (data.success && data.data) {
-      return data.data
-    }
-    return []
-  } catch (error) {
-    console.error(`Error fetching ${lookupName}:`, error)
-    return []
-  }
-}
-
+// Fetch lookups from API using the service
 async function fetchAllLookups() {
+  if (!selectedRole.value) return
+  
   isLoadingLookups.value = true
   lookupError.value = null
   
   try {
-    const lookupNames = ['gender', 'education_level', 'how_did_you_know_us', 'interview_time_preference', 'yes_no']
-    
-    if (selectedRole.value === 'student') {
-      lookupNames.push('quran_memorization_level', 'has_ijaza', 'program_track')
-    } else if (selectedRole.value === 'teacher') {
-      lookupNames.push('mastery_percentage', 'experience_years', 'has_ijaza')
+    const groups = getRegistrationLookupGroups(selectedRole.value)
+    const fetchedLookups = await getLookups(groups)
+    // Initialize all lookup arrays to prevent undefined errors
+    lookups.value = {
+      gender: [],
+      education_level: [],
+      how_did_you_know_us: [],
+      quran_memorization_level: [],
+      has_ijaza: [],
+      program_track: [],
+      interview_time_preference: [],
+      yes_no: [],
+      mastery_percentage: [],
+      experience_years: [],
+      memorized_quran_completely: [],
+      ...fetchedLookups
     }
-    
-    const results = await Promise.all(lookupNames.map(name => fetchLookup(name)))
-    
-    lookupNames.forEach((name, index) => {
-      lookups.value[name] = results[index] || []
-    })
   } catch (error) {
     lookupError.value = 'فشل تحميل البيانات. يرجى المحاولة مرة أخرى.'
     console.error('Error fetching lookups:', error)
+    // Initialize empty lookups on error
+    lookups.value = {
+      gender: [],
+      education_level: [],
+      how_did_you_know_us: [],
+      quran_memorization_level: [],
+      has_ijaza: [],
+      program_track: [],
+      interview_time_preference: [],
+      yes_no: [],
+      mastery_percentage: [],
+      experience_years: [],
+      memorized_quran_completely: []
+    }
   } finally {
     isLoadingLookups.value = false
   }
 }
 
+// Helper to convert LookupItem[] to select options
+function getSelectOptions(lookupName: string): Array<{ id: number; value: string; label: string }> {
+  const items = lookups.value[lookupName] || []
+  return items.map((item) => ({
+    id: item.id,
+    value: item.key,
+    label: item.value_ar || item.value_en,
+  }))
+}
+
 // Helper functions
 function getLookupId(lookupName: string, key: string): number | null {
   const items = lookups.value[lookupName] || []
-  const item = items.find((i: any) => i.key === key)
+  const item = items.find((i) => i.key === key)
   return item ? item.id : null
 }
 
@@ -265,7 +300,21 @@ function nextStep() {
       if (!validateStudentForm()) return
       currentStep.value = 3
     } else if (currentStep.value === 3) {
-      if (!validateStudentStep3()) return
+      console.log('Step 3: Validating form...', {
+        form: studentStep3Form,
+        errors: studentStep3Errors,
+      })
+      if (!validateStudentStep3()) {
+        console.log('Step 3: Validation failed', studentStep3Errors)
+        return
+      }
+      console.log('Step 3: Validation passed, navigating to step 4 (calendar)')
+      // Ensure calendarMonth is initialized before navigating
+      if (!calendarMonth.value) {
+        calendarMonth.value = new Date()
+      }
+      selectedDate.value = null
+      selectedTime.value = ''
       currentStep.value = 4
     }
   } else if (selectedRole.value === 'teacher') {
@@ -311,7 +360,6 @@ async function submitStudentRegistration() {
   submitErrors.value = {}
   
   try {
-    const phone = parsePhoneNumber(studentForm.phoneNumber)
     const programTrackId = getLookupId('program_track', studentStep3Form.desiredPath)
     
     if (!programTrackId) {
@@ -331,8 +379,8 @@ async function submitStudentRegistration() {
       education_level_id: getLookupId('education_level', studentForm.educationalLevel),
       job: studentForm.occupation || null,
       how_did_you_know_us_id: getLookupId('how_did_you_know_us', studentForm.howDidYouHear),
-      phone_country_code: phone.countryCode,
-      phone_number: phone.number,
+      phone_country_code: studentPhoneCountryCode.value,
+      phone_number: studentForm.phoneNumber,
       interview_time_preference_id: getLookupId('interview_time_preference', studentStep3Form.interviewTime),
       interview_date: formatDate(selectedDate.value),
       residence: studentStep3Form.placeOfResidence || null,
@@ -345,7 +393,7 @@ async function submitStudentRegistration() {
     
     const response = await apiRequest({
       method: 'POST',
-      url: '/register',
+      url: '/auth/register',
       data: payload
     })
     
@@ -385,8 +433,6 @@ async function submitTeacherRegistration() {
   submitErrors.value = {}
   
   try {
-    const phone = parsePhoneNumber(teacherForm.phoneNumber)
-    
     const payload = {
       full_name: teacherForm.fullName,
       email: teacherForm.email,
@@ -398,10 +444,10 @@ async function submitTeacherRegistration() {
       education_level_id: getLookupId('education_level', teacherForm.educationalLevel),
       job: teacherForm.occupation || null,
       how_did_you_know_us_id: getLookupId('how_did_you_know_us', teacherForm.howDidYouHear),
-      phone_country_code: phone.countryCode,
-      phone_number: phone.number,
+      phone_country_code: teacherPhoneCountryCode.value,
+      phone_number: teacherForm.phoneNumber,
       interview_time_preference_id: getLookupId('interview_time_preference', teacherStep2Form.interviewTime),
-      interview_date: null,
+      interview_date: formatDate(teacherStep2Form.interviewDate),
       residence: teacherStep2Form.placeOfResidence || null,
       memorized_quran_completely_id: getLookupId('memorized_quran_completely', teacherForm.memorizedQuranCompletely),
       mastery_percentage_id: getLookupId('mastery_percentage', teacherStep2Form.masteryPercentage),
@@ -412,7 +458,7 @@ async function submitTeacherRegistration() {
     
     const response = await apiRequest({
       method: 'POST',
-      url: '/register',
+      url: '/auth/register',
       data: payload
     })
     
@@ -457,6 +503,9 @@ function isDateAvailable(date: Date): boolean {
 }
 
 function getCalendarDays() {
+  if (!calendarMonth.value) {
+    calendarMonth.value = new Date()
+  }
   const year = calendarMonth.value.getFullYear()
   const month = calendarMonth.value.getMonth()
   const firstDay = new Date(year, month, 1)
@@ -534,10 +583,16 @@ function selectDate(date: Date) {
 }
 
 function previousMonth() {
+  if (!calendarMonth.value) {
+    calendarMonth.value = new Date()
+  }
   calendarMonth.value = new Date(calendarMonth.value.getFullYear(), calendarMonth.value.getMonth() - 1, 1)
 }
 
 function nextMonth() {
+  if (!calendarMonth.value) {
+    calendarMonth.value = new Date()
+  }
   calendarMonth.value = new Date(calendarMonth.value.getFullYear(), calendarMonth.value.getMonth() + 1, 1)
 }
 
@@ -564,16 +619,28 @@ function closeErrorModal() {
   submitErrors.value = {}
 }
 
-// Load lookups on mount
+// Load lookups on mount only if type is selected
 onMounted(() => {
-  fetchAllLookups()
+  if (selectedRole.value) {
+    fetchAllLookups()
+  }
+})
+
+// Watch for role changes and load lookups
+watch(selectedRole, (role) => {
+  if (role) {
+    // Reset step when role changes
+    currentStep.value = 1
+    fetchAllLookups()
+  }
 })
 
 </script>
 
 <template>
   <div class="register-view">
-    <div class="register-view__container">
+    <!-- Show form only if role is selected -->
+    <div v-if="selectedRole" class="register-view__container">
       <div 
         class="register-view__grid"
         :class="{ 'register-view__grid--calendar': selectedRole === 'student' && currentStep === 4 }"
@@ -781,8 +848,9 @@ onMounted(() => {
               </div>
 
               <div class="register-view__field-group">
-                <BaseInput
+                <BasePhoneInput
                   v-model="studentForm.phoneNumber"
+                  v-model:country-code="studentPhoneCountryCode"
                   label="رقم الهاتف مع رمز الدولة (واتس اب)"
                   placeholder="رقم هاتف واتساب"
                   :error="studentErrors.phoneNumber"
@@ -804,7 +872,6 @@ onMounted(() => {
                   variant="primary"
                   size="lg"
                   class="register-view__submit-btn"
-                  :disabled="!studentForm.fullName || !studentForm.gender || !studentForm.dateOfBirth || !studentForm.country || !studentForm.educationalLevel || !studentForm.occupation || !studentForm.howDidYouHear || !studentForm.phoneNumber || (studentForm.email && studentErrors.email)"
                   @click="nextStep"
                 >
                   <span>التالي</span>
@@ -962,7 +1029,6 @@ onMounted(() => {
                   variant="primary"
                   size="lg"
                   class="register-view__submit-btn"
-                  :disabled="!studentStep3Form.placeOfResidence || !studentStep3Form.quranMemorizationLevel || !studentStep3Form.ijazahOrSanad || !studentStep3Form.watchedIntroVideo || !studentStep3Form.desiredPath || !studentStep3Form.interviewTime"
                   @click="nextStep"
                 >
                   <span>إرسال التسجيل</span>
@@ -1053,7 +1119,7 @@ onMounted(() => {
                       </svg>
                     </button>
                     <div class="register-view__calendar-title">
-                      {{ months[calendarMonth.value.getMonth()] }} {{ calendarMonth.value.getFullYear() }}
+                      {{ calendarMonth ? `${months[calendarMonth.getMonth()]} ${calendarMonth.getFullYear()}` : '' }}
                     </div>
                     <button type="button" class="register-view__calendar-nav" @click="nextMonth">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1194,8 +1260,9 @@ onMounted(() => {
               />
 
               <div class="register-view__field-group">
-                <BaseInput
+                <BasePhoneInput
                   v-model="teacherForm.phoneNumber"
+                  v-model:country-code="teacherPhoneCountryCode"
                   label="رقم الهاتف مع رمز الدولة (واتس اب)"
                   placeholder="رقم هاتف واتساب"
                   :error="teacherErrors.phoneNumber"
@@ -1210,7 +1277,7 @@ onMounted(() => {
                 </label>
                 <div class="register-view__segmented-buttons register-view__segmented-buttons--two">
                   <button
-                    v-for="item in lookups.memorized_quran_completely"
+                    v-for="item in (lookups.memorized_quran_completely || [])"
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
@@ -1229,7 +1296,7 @@ onMounted(() => {
                 </label>
                 <div class="register-view__segmented-buttons register-view__segmented-buttons--two">
                   <button
-                    v-for="item in lookups.gender"
+                    v-for="item in (lookups.gender || [])"
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
@@ -1249,12 +1316,12 @@ onMounted(() => {
                 <div 
                   class="register-view__segmented-buttons"
                   :class="{
-                    'register-view__segmented-buttons--three': lookups.education_level.length === 3,
-                    'register-view__segmented-buttons--four': lookups.education_level.length === 4
+                    'register-view__segmented-buttons--three': lookups.education_level?.length === 3,
+                    'register-view__segmented-buttons--four': lookups.education_level?.length === 4
                   }"
                 >
                   <button
-                    v-for="item in lookups.education_level"
+                    v-for="item in (lookups.education_level || [])"
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
@@ -1274,13 +1341,13 @@ onMounted(() => {
                 <div 
                   class="register-view__segmented-buttons"
                   :class="{
-                    'register-view__segmented-buttons--two': lookups.how_did_you_know_us.length === 2,
-                    'register-view__segmented-buttons--three': lookups.how_did_you_know_us.length === 3,
-                    'register-view__segmented-buttons--four': lookups.how_did_you_know_us.length === 4
+                    'register-view__segmented-buttons--two': lookups.how_did_you_know_us?.length === 2,
+                    'register-view__segmented-buttons--three': lookups.how_did_you_know_us?.length === 3,
+                    'register-view__segmented-buttons--four': lookups.how_did_you_know_us?.length === 4
                   }"
                 >
                   <button
-                    v-for="item in lookups.how_did_you_know_us"
+                    v-for="item in (lookups.how_did_you_know_us || [])"
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
@@ -1298,7 +1365,7 @@ onMounted(() => {
                   variant="primary"
                   size="lg"
                   class="register-view__submit-btn"
-                  :disabled="!teacherForm.fullName || !teacherForm.email || !teacherForm.password || teacherForm.password.length < 8 || !teacherForm.country || !teacherForm.dateOfBirth || !teacherForm.occupation || !teacherForm.phoneNumber || !teacherForm.memorizedQuranCompletely || !teacherForm.gender || !teacherForm.educationalLevel || !teacherForm.howDidYouHear || teacherErrors.email"
+                  :disabled="!teacherForm.fullName || !teacherForm.email || !teacherForm.password || teacherForm.password.length < 8 || !teacherForm.country || !teacherForm.dateOfBirth || !teacherForm.occupation || !teacherForm.phoneNumber || !teacherForm.memorizedQuranCompletely || !teacherForm.gender || !teacherForm.educationalLevel || !teacherForm.howDidYouHear || !!teacherErrors.email || isSubmitting"
                   @click="nextStep"
                 >
                   <span>التالي</span>
@@ -1413,7 +1480,7 @@ onMounted(() => {
                 </label>
                 <div class="register-view__segmented-buttons register-view__segmented-buttons--two">
                   <button
-                    v-for="item in lookups.yes_no"
+                    v-for="item in (lookups.yes_no || [])"
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
@@ -1432,7 +1499,7 @@ onMounted(() => {
                 </label>
                 <div class="register-view__segmented-buttons register-view__segmented-buttons--two">
                   <button
-                    v-for="item in lookups.interview_time_preference"
+                    v-for="item in (lookups.interview_time_preference || [])"
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
@@ -1445,12 +1512,41 @@ onMounted(() => {
                 <p v-if="teacherStep2Errors.interviewTime" class="register-view__field-error">{{ teacherStep2Errors.interviewTime }}</p>
               </div>
 
+              <BaseDatePicker
+                v-model="teacherStep2Form.interviewDate"
+                label="تاريخ المقابلة"
+                placeholder="اختر تاريخ المقابلة"
+                :error="teacherStep2Errors.interviewDate"
+                required
+              />
+
+              <!-- Show selected interview date and time summary -->
+              <div v-if="teacherStep2Form.interviewDate && teacherStep2Form.interviewTime" class="register-view__info-card" style="margin-top: 1.5rem;">
+                <h3 class="register-view__info-card-title">معلومات المقابلة</h3>
+                <div class="register-view__info-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                  <span>تاريخ المقابلة: {{ formatDate(teacherStep2Form.interviewDate) }}</span>
+                </div>
+                <div class="register-view__info-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  <span>الموعد المناسب: {{ lookups.interview_time_preference?.find((item: any) => item.key === teacherStep2Form.interviewTime)?.value_ar || '' }}</span>
+                </div>
+              </div>
+
               <div class="register-view__form-actions">
                 <BaseButton
                   variant="primary"
                   size="lg"
                   class="register-view__submit-btn"
-                  :disabled="isSubmitting || !teacherStep2Form.placeOfResidence || !teacherStep2Form.masteryPercentage || !teacherStep2Form.hasIjaza || !teacherStep2Form.experienceYears || !teacherStep2Form.volunteer || !teacherStep2Form.interviewTime"
+                  :disabled="isSubmitting || !teacherStep2Form.placeOfResidence || !teacherStep2Form.masteryPercentage || !teacherStep2Form.hasIjaza || !teacherStep2Form.experienceYears || !teacherStep2Form.volunteer || !teacherStep2Form.interviewTime || !teacherStep2Form.interviewDate"
                   @click="submitTeacherRegistration"
                 >
                   {{ isSubmitting ? 'جاري التسجيل...' : 'إرسال التسجيل' }}
@@ -1536,8 +1632,8 @@ onMounted(() => {
           </Transition>
         </Teleport>
 
-        <!-- Info Section (shown when not on appointment step) -->
-        <div v-if="selectedRole === 'student' && currentStep !== 4" class="register-view__info-section">
+        <!-- Info Section (always shown) -->
+        <div v-if="selectedRole" class="register-view__info-section">
           <div class="register-view__journey">
             <h2 class="register-view__journey-title">ابدأ رحلتك القرآنية</h2>
             <p class="register-view__journey-text">
@@ -1564,6 +1660,9 @@ onMounted(() => {
         </div>
       </div>
     </div>
+    
+    <!-- Registration Type Dialog - Shows when no type is selected -->
+    <RegistrationTypeDialog v-model="showRegistrationDialog" />
   </div>
 </template>
 

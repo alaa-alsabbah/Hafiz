@@ -131,3 +131,49 @@ export const ATTENDANCE_STATUS_CONFIG = {
     color: TAG_COLORS.yellow,
   },
 }
+
+// Teacher menu items
+export const TEACHER_MENU_ITEMS = [
+  {
+    label: DASHBOARD_LABELS.PAGE_TITLE,
+    path: '/teacher/dashboard',
+    name: 'teacher-dashboard',
+    icon: 'grid',
+  },
+  {
+    label: 'الطلاب',
+    path: '/teacher/students',
+    name: 'teacher-students',
+    icon: 'user',
+  },
+  {
+    label: WEEKLY_REPORT_LABELS.PAGE_TITLE,
+    path: '/teacher/weekly-report',
+    name: 'teacher-weekly-report',
+    icon: 'calendar',
+  },
+  {
+    label: 'العرض والاختبار',
+    path: '/teacher/presentation-test',
+    name: 'teacher-presentation-test',
+    icon: 'graduation-cap',
+  },
+  {
+    label: 'الاستئذان',
+    path: '/teacher/permission',
+    name: 'teacher-permission',
+    icon: 'calendar',
+  },
+  {
+    label: 'تقييمات المقابلات',
+    path: '/teacher/evaluations',
+    name: 'teacher-evaluations',
+    icon: 'calendar',
+  },
+  {
+    label: 'المعلمين',
+    path: '/teacher/teachers',
+    name: 'teacher-teachers',
+    icon: 'user',
+  },
+]

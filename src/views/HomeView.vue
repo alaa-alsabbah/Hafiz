@@ -6,12 +6,14 @@ import childImage from '@/assets/img/child.png'
 import humanImage from '@/assets/img/human.png'
 import wordImage from '@/assets/img/word.png'
 import hiUserImage from '@/assets/img/hiUser.png'
+import RegistrationTypeDialog from '@/components/common/RegistrationTypeDialog.vue'
 
 const router = useRouter()
 const selectedProgram = ref<'hafiz' | 'fursan'>('hafiz')
+const showRegistrationDialog = ref(false)
 
 function openRegistrationDialog() {
-  router.push({ name: 'register', query: { type: 'student' } })
+  showRegistrationDialog.value = true
 }
 
 function goToLogin() {
@@ -261,6 +263,9 @@ const features = [
         </div>
       </div>
     </section>
+
+    <!-- Registration Type Dialog -->
+    <RegistrationTypeDialog v-model="showRegistrationDialog" />
   </div>
 </template>
 

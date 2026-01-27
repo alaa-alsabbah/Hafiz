@@ -4,12 +4,14 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppLogo from '@/components/common/AppLogo.vue'
 import { BaseButton } from '@/components/ui'
+import RegistrationTypeDialog from '@/components/common/RegistrationTypeDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
 const isMobileMenuOpen = ref(false)
+const showRegistrationDialog = ref(false)
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const currentUser = computed(() => authStore.currentUser)
@@ -22,10 +24,14 @@ function closeMobileMenu() {
   isMobileMenuOpen.value = false
 }
 
+function openRegistrationDialog() {
+  showRegistrationDialog.value = true
+  closeMobileMenu()
+}
+
 function navigateTo(path: string) {
   if (path === '/register') {
-    router.push({ name: 'register', query: { type: 'student' } })
-    closeMobileMenu()
+    openRegistrationDialog()
   } else {
     router.push(path)
     closeMobileMenu()
@@ -240,6 +246,9 @@ const isActiveRoute = (routeName: string) => {
         </div>
       </div>
     </footer>
+
+    <!-- Registration Type Dialog -->
+    <RegistrationTypeDialog v-model="showRegistrationDialog" />
   </div>
 </template>
 
