@@ -1,5 +1,5 @@
 // Lookups API service
-import { apiRequest, type ApiResponse } from './api'
+import type { ApiResponse } from './api'
 
 // Lookup groups that can be fetched from the API
 export const LOOKUP_GROUPS = {
@@ -69,14 +69,6 @@ export async function getLookup(group: LookupGroup): Promise<LookupItem[]> {
     // Cache the result
     lookupsCache.set(group, responseData.data)
     return responseData.data
-
-    if (!response.success || !response.data) {
-      throw new Error(response.message || `فشل تحميل بيانات ${group}`)
-    }
-
-    // Cache the result
-    lookupsCache.set(group, response.data)
-    return response.data
   } catch (error) {
     console.error(`Error fetching lookup group ${group}:`, error)
     throw error

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 
 interface Option {
   id: number | string
@@ -27,10 +26,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:modelValue': [value: string | number | null]
 }>()
-
-const selectedOption = computed(() => {
-  return props.options.find((opt) => opt.value === props.modelValue)
-})
 
 function handleChange(event: Event) {
   const target = event.target as HTMLSelectElement

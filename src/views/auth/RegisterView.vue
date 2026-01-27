@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch, Teleport, Transition } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useValidation, rules } from '@/composables/useValidation'
-import { BaseInput, BaseButton, BaseCheckbox, BaseDatePicker, BaseSelect, BasePhoneInput } from '@/components/ui'
+import { BaseInput, BaseButton, BaseCheckbox, BaseDatePicker, BasePhoneInput } from '@/components/ui'
 import { IconArrowRight } from '@/components/icons'
 import bgVideoImage from '@/assets/img/bgVedio.png'
 import { apiRequest, ApiException } from '@/services/api'
@@ -12,6 +12,10 @@ import {
   getRegistrationLookupGroups,
   type LookupItem,
 } from '@/services/lookups.service'
+import {
+  getRegistrationConfig,
+  type RegistrationConfig,
+} from '@/services/registration.service'
 import RegistrationTypeDialog from '@/components/common/RegistrationTypeDialog.vue'
 
 const router = useRouter()
@@ -45,26 +49,68 @@ watch(
 // Step management
 const currentStep = ref(1)
 
-// Video tab selection
-const selectedProgram = ref<'hafiz' | 'fursan'>('hafiz')
+// Video tab selection - initialize with first program if available
+const selectedProgram = ref<string>('hafiz')
 
 // Terms agreement checkbox
 const watchedVideoAndAgreed = ref(false)
 
-// Conditions list for step 1
-const conditions = [
-  'الجدية والالتزام التام بطريقة البرنامج المقطع التعريفي',
-  'السلامة من الأخطاء واللحون الجلية',
-  'اجتياز المقابلة',
-  'رسوم اشتراك 5 دنانير شهرياً',
-  'الاشتراك الشهر الأول مجاني'
-]
+// Registration configuration from API
+const registrationConfig = ref<RegistrationConfig>({
+  student: {
+    title: 'نموذج التسجيل',
+    subtitle: 'برنامجان نوعيان لحفظ وإتقان القرآن',
+    batch_number: '',
+    conditions: [
+      'الجدية والالتزام التام بطريقة البرنامج المقطع التعريفي',
+      'السلامة من الأخطاء واللحون الجلية',
+      'اجتياز المقابلة',
+      'رسوم اشتراك 5 دنانير شهرياً',
+      'الاشتراك الشهر الأول مجاني'
+    ], // Default conditions, will be replaced by API if available
+    programs: [
+      { id: 1, key: 'hafiz', name_ar: 'حفظة', name_en: 'Hafiz' },
+      { id: 2, key: 'fursan', name_ar: 'فرسان', name_en: 'Fursan' }
+    ],
+    field_hints: {},
+    help_text: {
+      title: 'هل تحتاج مساعدة في التسجيل؟',
+      description: 'إذا واجهت أي صعوبة أثناء التسجيل أو لديك أي استفسار، لا تتردد في التواصل معنا.',
+      contact_button_text: 'اتصل بنا'
+    },
+    journey_text: 'انضم إلى برنامج شامل مصمم خصيصاً لمساعدتك في حفظ وإتقان القرآن الكريم.'
+  },
+  teacher: {
+    step1: {
+      title: 'نموذج تسجيل المقرئين',
+      subtitle: 'برنامجان نوعيان لحفظ وإتقان القرآن'
+    },
+    step2: {
+      title: 'نموذج التسجيل في المقرئين',
+      subtitle: 'برنامجان نوعيان لحفظ وإتقان القرآن'
+    },
+    field_hints: {},
+    help_text: {
+      title: 'هل تحتاج مساعدة في التسجيل؟',
+      description: 'إذا واجهت أي صعوبة أثناء التسجيل أو لديك أي استفسار، لا تتردد في التواصل معنا.',
+      contact_button_text: 'اتصل بنا'
+    },
+    journey_text: 'انضم إلى برنامج شامل مصمم خصيصاً لمساعدتك في حفظ وإتقان القرآن الكريم.'
+  },
+  common: {
+    success_message: 'تم تسجيل طلبك بنجاح. سنتواصل معك قريباً لتأكيد موعد المقابلة.',
+    error_message: 'حدث خطأ أثناء التسجيل',
+    confirmation_note: 'ستتلقى بريدًا إلكترونيًا للتأكيد يحتوي على تفاصيل المقابلة ورابط للانضمام عبر الإنترنت.',
+    interview_confirmation_text: 'تم جدولة المقابلة لـ'
+  }
+})
 
 // Lookups data - using LookupItem type from service
 const lookups = ref<Record<string, LookupItem[]>>({})
 
 const isLoadingLookups = ref(false)
 const lookupError = ref<string | null>(null)
+const isLoadingConfig = ref(false)
 
 // Student form step 2
 const { form: studentForm, errors: studentErrors, validate: validateStudentForm } = useValidation(
@@ -195,6 +241,47 @@ const submitErrors = ref<Record<string, string[]>>({})
 const showSuccessModal = ref(false)
 const showErrorModal = ref(false)
 
+// Fetch registration configuration from API
+async function fetchRegistrationConfig() {
+  isLoadingConfig.value = true
+  try {
+    const config = await getRegistrationConfig()
+    // Merge with existing config to preserve defaults
+    registrationConfig.value = {
+      student: {
+        ...registrationConfig.value.student,
+        ...config.student,
+        programs: config.student?.programs && config.student.programs.length > 0 
+          ? config.student.programs 
+          : registrationConfig.value.student?.programs || [],
+        conditions: config.student?.conditions && config.student.conditions.length > 0
+          ? config.student.conditions
+          : (registrationConfig.value.student?.conditions || [])
+      },
+      teacher: {
+        ...registrationConfig.value.teacher,
+        ...config.teacher
+      },
+      common: {
+        ...registrationConfig.value.common,
+        ...config.common
+      }
+    }
+    // Set default program if available and not already set
+    if (selectedRole.value === 'student' && !selectedProgram.value) {
+      const programs = registrationConfig.value.student?.programs || []
+      if (programs.length > 0) {
+        selectedProgram.value = programs[0].key
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching registration config:', error)
+    // Keep default values on error
+  } finally {
+    isLoadingConfig.value = false
+  }
+}
+
 // Fetch lookups from API using the service
 async function fetchAllLookups() {
   if (!selectedRole.value) return
@@ -242,16 +329,6 @@ async function fetchAllLookups() {
   }
 }
 
-// Helper to convert LookupItem[] to select options
-function getSelectOptions(lookupName: string): Array<{ id: number; value: string; label: string }> {
-  const items = lookups.value[lookupName] || []
-  return items.map((item) => ({
-    id: item.id,
-    value: item.key,
-    label: item.value_ar || item.value_en,
-  }))
-}
-
 // Helper functions
 function getLookupId(lookupName: string, key: string): number | null {
   const items = lookups.value[lookupName] || []
@@ -269,25 +346,10 @@ function formatDate(date: Date | string | null): string | null {
   return `${year}-${month}-${day}`
 }
 
-function parsePhoneNumber(phone: string): { countryCode: string | null; number: string } {
-  if (!phone) return { countryCode: null, number: phone }
-  
-  const match = phone.match(/^(\+?962|00962)/i)
-  if (match) {
-    const countryCode = match[1].replace(/^00/, '+')
-    const number = phone.replace(match[1], '').trim()
-    return { countryCode, number }
-  }
-  
-  if (phone.startsWith('7')) {
-    return { countryCode: '+962', number: phone }
-  }
-  
-  return { countryCode: null, number: phone }
-}
-
 function getProgramId(): number {
-  return selectedProgram.value === 'fursan' ? 2 : 1
+  const programs = registrationConfig.value.student?.programs || []
+  const selected = programs.find(p => p.key === selectedProgram.value)
+  return selected?.id || 1
 }
 
 // Function to proceed to next step
@@ -619,8 +681,16 @@ function closeErrorModal() {
   submitErrors.value = {}
 }
 
-// Load lookups on mount only if type is selected
-onMounted(() => {
+// Load config and lookups on mount
+onMounted(async () => {
+  await fetchRegistrationConfig()
+  // Initialize selected program after config loads
+  if (selectedRole.value === 'student') {
+    const programs = registrationConfig.value.student?.programs || []
+    if (programs.length > 0 && !selectedProgram.value) {
+      selectedProgram.value = programs[0].key
+    }
+  }
   if (selectedRole.value) {
     fetchAllLookups()
   }
@@ -661,23 +731,18 @@ watch(selectedRole, (role) => {
             <!-- Video Section -->
             <div class="register-view__video-section">
               <div class="register-view__video-tabs">
-                <p class="register-view__video-tabs-hint">
-                  بالنقر على هذا التبويب يمكنك التبديل بين الفيديوهات
+                <p v-if="registrationConfig.student?.field_hints?.video_tabs" class="register-view__video-tabs-hint">
+                  {{ registrationConfig.student.field_hints.video_tabs }}
                 </p>
                 <div class="register-view__video-tabs-buttons">
                   <button
+                    v-for="program in (registrationConfig.student?.programs || [])"
+                    :key="program.id"
                     class="register-view__video-tab"
-                    :class="{ 'register-view__video-tab--active': selectedProgram === 'hafiz' }"
-                    @click="selectedProgram = 'hafiz'"
+                    :class="{ 'register-view__video-tab--active': selectedProgram === program.key }"
+                    @click="selectedProgram = program.key"
                   >
-                    حفظة
-                  </button>
-                  <button
-                    class="register-view__video-tab"
-                    :class="{ 'register-view__video-tab--active': selectedProgram === 'fursan' }"
-                    @click="selectedProgram = 'fursan'"
-                  >
-                    فرسان
+                    {{ program.name_ar }}
                   </button>
                 </div>
               </div>
@@ -698,11 +763,11 @@ watch(selectedRole, (role) => {
             </div>
 
             <!-- Conditions -->
-            <div class="register-view__conditions">
+            <div v-if="registrationConfig.student?.conditions && registrationConfig.student.conditions.length > 0" class="register-view__conditions">
               <h3 class="register-view__conditions-title">شروط الالتحاق في البرنامج :</h3>
               <ul class="register-view__conditions-list">
                 <li
-                  v-for="(condition, index) in conditions"
+                  v-for="(condition, index) in registrationConfig.student.conditions"
                   :key="index"
                   class="register-view__conditions-item"
                 >
@@ -715,7 +780,7 @@ watch(selectedRole, (role) => {
             <div class="register-view__actions">
               <BaseCheckbox
                 v-model="watchedVideoAndAgreed"
-                label="تمت مشاهدة المقاطع التعريفية وأوافق على الشروط المذكورة"
+                :label="registrationConfig.student?.field_hints?.video_agreement || 'تمت مشاهدة المقاطع التعريفية وأوافق على الشروط المذكورة'"
               />
               <BaseButton
                 variant="primary"
@@ -736,10 +801,11 @@ watch(selectedRole, (role) => {
           <template v-else-if="selectedRole === 'student' && currentStep === 2">
             <div class="register-view__header">
               <h1 class="register-view__title">
-                نموذج التسجيل في (الدفعة التاسعة) لبرنامجي "حفظة" و "فرسان"
+                {{ registrationConfig.student?.title || 'نموذج التسجيل' }}
+                <span v-if="registrationConfig.student?.batch_number">({{ registrationConfig.student.batch_number }})</span>
               </h1>
               <p class="register-view__subtitle">
-                برنامجان نوعيان لحفظ وإتقان القرآن .
+                {{ registrationConfig.student?.subtitle || 'برنامجان نوعيان لحفظ وإتقان القرآن' }}
               </p>
             </div>
 
@@ -895,10 +961,11 @@ watch(selectedRole, (role) => {
           <template v-else-if="selectedRole === 'student' && currentStep === 3">
             <div class="register-view__header">
               <h1 class="register-view__title">
-                نموذج التسجيل في (الدفعة التاسعة) لبرنامجي "حفظة" و "فرسان"
+                {{ registrationConfig.student?.title || 'نموذج التسجيل' }}
+                <span v-if="registrationConfig.student?.batch_number">({{ registrationConfig.student.batch_number }})</span>
               </h1>
               <p class="register-view__subtitle">
-                برنامجان نوعيان لحفظ وإتقان القرآن .
+                {{ registrationConfig.student?.subtitle || 'برنامجان نوعيان لحفظ وإتقان القرآن' }}
               </p>
             </div>
 
@@ -989,7 +1056,7 @@ watch(selectedRole, (role) => {
                 <label class="register-view__field-label">
                   المسار الذي ترغب بالمشاركة فيه ؟ <span class="register-view__required">*</span>
                 </label>
-                <p class="register-view__field-hint">ملاحظة : برنامج فرسان | المسار الفضي في ست سنوات (مغلق) ، يفتح بعد اجتياز المستوى الثاني (جزء تبارك)</p>
+                <p v-if="registrationConfig.student?.field_hints?.program_track" class="register-view__field-hint">{{ registrationConfig.student.field_hints.program_track }}</p>
                 <div class="register-view__segmented-buttons register-view__segmented-buttons--vertical">
                   <button
                     v-for="item in lookups.program_track"
@@ -1175,7 +1242,7 @@ watch(selectedRole, (role) => {
               <Transition name="confirmation">
                 <div v-if="selectedDate && selectedTime" class="register-view__confirmation-section">
                   <div class="register-view__confirmation-content">
-                    <h3 class="register-view__confirmation-title">تم جدولة المقابلة لـ :</h3>
+                    <h3 class="register-view__confirmation-title">{{ registrationConfig.common?.interview_confirmation_text || 'تم جدولة المقابلة لـ' }} :</h3>
                     <div class="register-view__confirmation-date">{{ formatSelectedDate(selectedDate) }}</div>
                     <div class="register-view__confirmation-time">{{ formatSelectedTime(selectedTime) }}</div>
                     <BaseButton
@@ -1201,10 +1268,10 @@ watch(selectedRole, (role) => {
           <template v-else-if="selectedRole === 'teacher' && currentStep === 1">
             <div class="register-view__header">
               <h1 class="register-view__title">
-                نموذج تسجيل المقرئين (المستمعين) في برنامجي "حفظة" و"فرسان"
+                {{ registrationConfig.teacher?.step1?.title || 'نموذج تسجيل المقرئين' }}
               </h1>
               <p class="register-view__subtitle">
-                برنامجان نوعيان لحفظ وإتقان القرآن
+                {{ registrationConfig.teacher?.step1?.subtitle || 'برنامجان نوعيان لحفظ وإتقان القرآن' }}
               </p>
             </div>
 
@@ -1389,10 +1456,10 @@ watch(selectedRole, (role) => {
           <template v-else-if="selectedRole === 'teacher' && currentStep === 2">
             <div class="register-view__header">
               <h1 class="register-view__title">
-                نموذج التسجيل في المقرئين (المسمعين) لبرنامجي "حفظة" و "فرسان".
+                {{ registrationConfig.teacher?.step2?.title || 'نموذج التسجيل في المقرئين' }}
               </h1>
               <p class="register-view__subtitle">
-                برنامجان نوعيان لحفظ وإتقان القرآن .
+                {{ registrationConfig.teacher?.step2?.subtitle || 'برنامجان نوعيان لحفظ وإتقان القرآن' }}
               </p>
             </div>
 
@@ -1582,7 +1649,7 @@ watch(selectedRole, (role) => {
                 </div>
                 <h2 class="registration-success-title">تم التسجيل بنجاح!</h2>
                 <p class="registration-success-text">
-                  تم تسجيل طلبك بنجاح. سنتواصل معك قريباً لتأكيد موعد المقابلة.
+                  {{ registrationConfig.common?.success_message || 'تم تسجيل طلبك بنجاح. سنتواصل معك قريباً لتأكيد موعد المقابلة.' }}
                 </p>
                 <button type="button" class="registration-success-btn" @click="closeSuccessModal">
                   العودة إلى الصفحة الرئيسية
@@ -1637,21 +1704,37 @@ watch(selectedRole, (role) => {
           <div class="register-view__journey">
             <h2 class="register-view__journey-title">ابدأ رحلتك القرآنية</h2>
             <p class="register-view__journey-text">
-              انضم إلى برنامج شامل مصمم خصيصاً لمساعدتك في حفظ وإتقان القرآن الكريم. مع إرشادات شخصية من معلمين معتمدين، وخطط دراسية منظمة، ودعم مستمر طوال رحلتك. ابدأ اليوم واتخذ خطوتك الأولى نحو إتقان كتاب الله.
+              {{ selectedRole === 'student' 
+                ? (registrationConfig.student?.journey_text || 'انضم إلى برنامج شامل مصمم خصيصاً لمساعدتك في حفظ وإتقان القرآن الكريم.')
+                : (registrationConfig.teacher?.journey_text || 'انضم إلى برنامج شامل مصمم خصيصاً لمساعدتك في حفظ وإتقان القرآن الكريم.')
+              }}
             </p>
           </div>
 
           <div class="register-view__help">
-            <h3 class="register-view__help-title">هل تحتاج مساعدة في التسجيل؟</h3>
+            <h3 class="register-view__help-title">
+              {{ selectedRole === 'student' 
+                ? (registrationConfig.student?.help_text?.title || 'هل تحتاج مساعدة في التسجيل؟')
+                : (registrationConfig.teacher?.help_text?.title || 'هل تحتاج مساعدة في التسجيل؟')
+              }}
+            </h3>
             <p class="register-view__help-text">
-              إذا واجهت أي صعوبة أثناء التسجيل أو لديك أي استفسار، لا تتردد في التواصل معنا. فريقنا جاهز لمساعدتك في أي وقت.
+              {{ selectedRole === 'student' 
+                ? (registrationConfig.student?.help_text?.description || 'إذا واجهت أي صعوبة أثناء التسجيل أو لديك أي استفسار، لا تتردد في التواصل معنا.')
+                : (registrationConfig.teacher?.help_text?.description || 'إذا واجهت أي صعوبة أثناء التسجيل أو لديك أي استفسار، لا تتردد في التواصل معنا.')
+              }}
             </p>
             <BaseButton
               variant="secondary"
               size="lg"
               class="register-view__contact-btn"
             >
-              <span>اتصل بنا</span>
+              <span>
+                {{ selectedRole === 'student' 
+                  ? (registrationConfig.student?.help_text?.contact_button_text || 'اتصل بنا')
+                  : (registrationConfig.teacher?.help_text?.contact_button_text || 'اتصل بنا')
+                }}
+              </span>
               <template #trailing>
                 <IconArrowRight />
               </template>
