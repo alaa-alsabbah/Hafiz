@@ -2,6 +2,9 @@
 // HAFIZ FURSAN - Main Stylesheet
 // ===========================================
 
+@import './variables';
+@import './mixins';
+
 // CSS Custom Properties
 :root {
   --color-primary: #{$color-primary};
@@ -12,16 +15,73 @@
   --color-background: #{$color-background};
   --color-background-card: #{$color-background-card};
   --color-background-input: #{$color-background-input};
+  --color-background-hero: #{$color-background-hero};
+  --color-background-home: #{$color-background-home};
+  --color-background-hero-section: #{$color-background-hero-section};
+  --color-background-sidebar: #{$color-background-sidebar};
+  --color-avatar-bg: #{$color-avatar-bg};
+  --color-stat-green: #{$color-stat-green};
+  --color-stat-yellow: #{$color-stat-yellow};
+  --color-stat-blue: #{$color-stat-blue};
+  --color-stat-pink: #{$color-stat-pink};
+  --color-stat-orange: #{$color-stat-orange};
   --color-text-primary: #{$color-text-primary};
   --color-text-secondary: #{$color-text-secondary};
   --color-text-muted: #{$color-text-muted};
   --color-text-inverse: #{$color-text-inverse};
   --color-border: #{$color-border};
+  --color-border-focus: #{$color-border-focus};
   --color-error: #{$color-error};
   --color-success: #{$color-success};
+  --color-hover-primary: #{$color-hover-primary};
+  --color-hover-overlay: #{$color-hover-overlay};
+  --color-active-submenu: #{$color-active-submenu};
   --font-family: #{$font-family-arabic};
+  --font-size-xs: #{$font-size-xs};
+  --font-size-sm: #{$font-size-sm};
+  --font-size-base: #{$font-size-base};
+  --font-size-lg: #{$font-size-lg};
+  --font-size-xl: #{$font-size-xl};
+  --font-size-2xl: #{$font-size-2xl};
+  --font-size-3xl: #{$font-size-3xl};
+  --font-size-4xl: #{$font-size-4xl};
+  --font-weight-regular: #{$font-weight-regular};
+  --font-weight-medium: #{$font-weight-medium};
+  --font-weight-bold: #{$font-weight-bold};
+  --line-height-tight: #{$line-height-tight};
+  --line-height-normal: #{$line-height-normal};
+  --spacing-1: #{$spacing-1};
+  --spacing-2: #{$spacing-2};
+  --spacing-3: #{$spacing-3};
+  --spacing-4: #{$spacing-4};
+  --spacing-5: #{$spacing-5};
+  --spacing-6: #{$spacing-6};
+  --spacing-8: #{$spacing-8};
+  --spacing-10: #{$spacing-10};
+  --spacing-12: #{$spacing-12};
+  --spacing-16: #{$spacing-16};
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-xl: #{$radius-xl};
+  --radius-2xl: #{$radius-2xl};
+  --radius-3xl: #{$radius-3xl};
+  --radius-full: #{$radius-full};
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
   --transition-fast: #{$transition-fast};
   --transition-normal: #{$transition-normal};
+  --input-height: #{$input-height};
+  --input-height-sm: #{$input-height-sm};
+  --input-height-lg: #{$input-height-lg};
+  --button-height: #{$button-height};
+  --button-height-sm: #{$button-height-sm};
+  --button-height-lg: #{$button-height-lg};
+  --sidebar-width: #{$sidebar-width};
+  --sidebar-width-collapsed: #{$sidebar-width-collapsed};
+  --sidebar-z-index: #{$sidebar-z-index};
+  --sidebar-overlay-z-index: #{$sidebar-overlay-z-index};
 }
 
 // Reset
@@ -52,6 +112,9 @@ body {
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   direction: rtl;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
 }
 
 [dir="rtl"] {

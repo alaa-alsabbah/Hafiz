@@ -15,6 +15,24 @@ $color-background: #F4F9F6;
 $color-background-card: #FFFFFF;
 $color-background-input: #FFFFFF;
 $color-background-hero: #C6D4B8;
+$color-background-home: #FAFCFB;
+$color-background-hero-section: #F0F7F2;
+$color-background-sidebar: #ECFDF5;
+
+// Avatar colors
+$color-avatar-bg: #14A274;
+
+// Stat card colors
+$color-stat-green: #E8F5E9;
+$color-stat-yellow: #FFF8E1;
+$color-stat-blue: #E3F2FD;
+$color-stat-pink: #FCE4EC;
+$color-stat-orange: #FFF9E8;
+
+// Hover states
+$color-hover-primary: rgba(27, 122, 78, 0.278);
+$color-hover-overlay: rgba(0, 0, 0, 0.5);
+$color-active-submenu: rgba(27, 122, 78, 0.1);
 
 $color-text-primary: #1A1A1A;
 $color-text-secondary: #6B7280;
@@ -64,6 +82,7 @@ $radius-md: 0.5rem;
 $radius-lg: 0.75rem;
 $radius-xl: 1rem;
 $radius-2xl: 1.5rem;
+$radius-3xl: 2.5rem;
 $radius-full: 9999px;
 
 // Shadows
@@ -89,3 +108,9 @@ $input-height-lg: 3.5rem;
 $button-height: 3rem;
 $button-height-sm: 2.5rem;
 $button-height-lg: 3.5rem;
+
+// Layout dimensions
+$sidebar-width: 280px;
+$sidebar-width-collapsed: 80px;
+$sidebar-z-index: 100;
+$sidebar-overlay-z-index: 998;

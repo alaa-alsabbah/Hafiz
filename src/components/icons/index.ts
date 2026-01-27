@@ -1,4 +1,11 @@
-export { default as IconMail } from './IconMail.vue'
-export { default as IconLock } from './IconLock.vue'
 export { default as IconArrowLeft } from './IconArrowLeft.vue'
+export { default as IconArrowRight } from './IconArrowRight.vue'
+export { default as IconCalendar } from './IconCalendar.vue'
+export { default as IconChevronUp } from './IconChevronUp.vue'
+export { default as IconGraduationCap } from './IconGraduationCap.vue'
+export { default as IconGrid } from './IconGrid.vue'
+export { default as IconLock } from './IconLock.vue'
+export { default as IconLogout } from './IconLogout.vue'
+export { default as IconMail } from './IconMail.vue'
+export { default as IconUser } from './IconUser.vue'
 

@@ -30,7 +30,7 @@ const routes: RouteRecordRaw[] = [
     path: '/register',
     name: 'register',
     component: () => import('@/views/auth/RegisterView.vue'),
-    meta: { layout: 'default' }
+    meta: { guest: true, layout: 'default' }
   },
   {
     path: '/dashboard',
