@@ -131,9 +131,7 @@ const features = [
             <button class="hero__btn hero__btn--primary" @click="openRegistrationDialog">
               سجل الآن
             </button>
-            <button class="hero__btn hero__btn--secondary" @click="goToLogin">
-              تسجيل الدخول
-            </button>
+          
           </div>
           <div class="hero__toggle-group">
             <button
