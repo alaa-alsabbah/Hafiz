@@ -103,12 +103,12 @@ function goToLogin(): void {
             إرسال رابط الاستعادة
           </BaseButton>
         </form>
+        
+        <button type="button" class="forgot-password-view__back-link" @click="goToLogin">
+          <IconArrowLeft class="forgot-password-view__back-icon" />
+          <span>العودة لتسجيل الدخول</span>
+        </button>
       </template>
-      
-      <button type="button" class="forgot-password-view__back-link" @click="goToLogin">
-        <IconArrowLeft class="forgot-password-view__back-icon" />
-        <span>العودة لتسجيل الدخول</span>
-      </button>
     </div>
   </AuthLayout>
 </template>
@@ -232,6 +232,15 @@ function goToLogin(): void {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 

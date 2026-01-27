@@ -1,11 +1,18 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import loginImage from '@/assets/img/loginImage.png'
+
+const route = useRoute()
+
+// Show hero only on login page, not on forgot password
+const showHero = computed(() => route.name === 'login')
 </script>
 
 <template>
   <div class="auth-layout">
-    <!-- Hero Section (Left side for RTL) -->
-    <div class="auth-layout__hero">
+    <!-- Hero Section (Left side for RTL) - Only show on login -->
+    <div v-if="showHero" class="auth-layout__hero">
       <div class="auth-layout__hero-content">
         <!-- Decorative circles behind image -->
         <div class="auth-layout__hero-decor">
@@ -22,7 +29,7 @@ import loginImage from '@/assets/img/loginImage.png'
     </div>
     
     <!-- Form Section (Right side for RTL) -->
-    <div class="auth-layout__form-section">
+    <div class="auth-layout__form-section" :class="{ 'auth-layout__form-section--full': !showHero }">
       <div class="auth-layout__form-container">
         <slot />
       </div>
@@ -37,7 +44,7 @@ import loginImage from '@/assets/img/loginImage.png'
   min-height: 100vh;
   background-color: var(--color-background);
   
-  // Hero Section - LEFT side
+  // Hero Section - LEFT side (only on login)
   &__hero {
     display: none;
     width: 50%;
@@ -123,6 +130,10 @@ import loginImage from '@/assets/img/loginImage.png'
     justify-content: center;
     padding: $spacing-6;
     background: linear-gradient(180deg, #F0F7F2 0%, #FFFFFF 50%);
+    
+    &--full {
+      width: 100%;
+    }
     
     @include lg {
       padding: $spacing-12;

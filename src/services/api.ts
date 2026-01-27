@@ -1,6 +1,21 @@
 // API service with token management and error handling
 import { API_BASE_URL, API_VERSION } from '@/config/api'
-import { ApiException } from './api'
+
+// API Exception class
+export class ApiException extends Error {
+  public errors?: Record<string, string[]>
+  
+  constructor(
+    message: string,
+    public code?: number,
+    validator?: Record<string, string[]>
+  ) {
+    super(message)
+    this.name = 'ApiException'
+    // Map validator to errors for easier access
+    this.errors = validator
+  }
+}
 
 // Token management
 export const tokenManager = {
@@ -93,20 +108,4 @@ export async function postFormData<T = any>(
     url,
     data: formData,
   })
-}
-
-// Export ApiException class
-export class ApiException extends Error {
-  public errors?: Record<string, string[]>
-  
-  constructor(
-    message: string,
-    public code?: number,
-    validator?: Record<string, string[]>
-  ) {
-    super(message)
-    this.name = 'ApiException'
-    // Map validator to errors for easier access
-    this.errors = validator
-  }
 }
