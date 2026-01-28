@@ -25,15 +25,41 @@ const props = withDefaults(defineProps<Props>(), {
   loadingMessage: 'جاري التحميل...',
   rowKey: (row: any, index: number) => row.id || index
 })
+
+const emit = defineEmits<{
+  'row-click': [row: any, index: number]
+}>()
 </script>
 
 <template>
-  <BaseTable
-    :columns="columns"
-    :data="data"
-    :loading="loading"
-    :empty-message="emptyMessage"
-    :loading-message="loadingMessage"
-    :row-key="rowKey"
-  />
+  <div class="data-table">
+    <div class="data-table__card">
+      <BaseTable
+        :columns="columns"
+        :data="data"
+        :loading="loading"
+        :empty-message="emptyMessage"
+        :loading-message="loadingMessage"
+        :row-key="rowKey"
+        @row-click="(row, index) => emit('row-click', row, index)"
+      />
+    </div>
+  </div>
 </template>
+
+<style lang="scss" scoped>
+.data-table {
+  width: 100%;
+
+  &__card {
+    background-color: var(--color-background-card);
+    border-radius: $radius-xl;
+    padding: $spacing-4;
+    box-shadow: $shadow-md;
+
+    @include sm-max {
+      padding: $spacing-3;
+    }
+  }
+}
+</style>

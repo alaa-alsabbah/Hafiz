@@ -24,10 +24,14 @@ const props = withDefaults(defineProps<Props>(), {
   emptyMessage: 'لا توجد بيانات',
   loadingMessage: 'جاري التحميل...',
   rowKey: (row: any, index: number) => row.id || index,
-  pageSizeOptions: () => [10, 25, 50]
+  pageSizeOptions: () => [5, 10, 25]
 })
 
-const pageSize = ref(props.pageSizeOptions[0] || 10)
+const emit = defineEmits<{
+  'row-click': [row: any, index: number]
+}>()
+
+const pageSize = ref(props.pageSizeOptions[0] || 5)
 const currentPage = ref(1)
 
 const totalItems = computed(() => props.data.length)
@@ -53,6 +57,10 @@ function getRowKey(row: any, index: number): string | number {
     return props.rowKey(row, index)
   }
   return row[props.rowKey] || index
+}
+
+function handleRowClick(row: any, index: number) {
+  emit('row-click', row, index)
 }
 
 function changePage(newPage: number) {
@@ -96,7 +104,12 @@ function handlePageSizeChange(event: Event) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(row, index) in paginatedData" :key="getRowKey(row, index)">
+          <tr
+            v-for="(row, index) in paginatedData"
+            :key="getRowKey(row, index)"
+            class="base-table__row"
+            @click="handleRowClick(row, index)"
+          >
             <td
               v-for="column in columns"
               :key="column.key"
@@ -182,6 +195,8 @@ function handlePageSizeChange(event: Event) {
     width: 100%;
     border-collapse: collapse;
     background: var(--color-background-card);
+    border-radius: $radius-xl;
+    overflow: hidden;
 
     thead {
       background-color: rgba(236, 244, 233, 1);
@@ -201,9 +216,10 @@ function handlePageSizeChange(event: Event) {
       tr {
         border-bottom: 1px solid rgba(229, 230, 230, 1);
         transition: background-color $transition-fast;
+        cursor: pointer;
 
         &:hover {
-          background-color: var(--color-background-hover, rgba(236, 244, 233, 0.3));
+          background-color: var(--color-background-hover, rgba(236, 244, 233, 0.4));
         }
 
         &:last-child {
@@ -247,7 +263,7 @@ function handlePageSizeChange(event: Event) {
 
   &__page-size-select {
     min-width: 64px;
-    padding: $spacing-1 $spacing-3;
+    padding: $spacing-2 $spacing-3;
     border-radius: 10px;
     border: none;
     background: rgba(244, 244, 244, 1);

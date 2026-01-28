@@ -16,6 +16,13 @@ export const STUDENT_LABELS = {
   REQUEST_PERMISSION: 'طلب إذن',
 } as const
 
+export const STUDENT_LEVEL_TABLE_LABELS = {
+  LEVEL_NUMBER: 'رقم المستوى',
+  DETAILS: 'التفاصيل',
+  CREATED_AT: 'تاريخ الإنشاء',
+  ACTION: 'عمل',
+} as const
+
 export const STUDENT_MENU_ITEMS = [
   {
     label: STUDENT_LABELS.PAGE_TITLE,

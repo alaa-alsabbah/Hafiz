@@ -101,6 +101,16 @@ export async function getStudentLevels(): Promise<ApiResponse<StudentLevel[]>> {
 }
 
 /**
+ * Get single student level by id
+ */
+export async function getStudentLevel(id: number): Promise<ApiResponse<StudentLevel>> {
+  return apiRequest<StudentLevel>({
+    method: 'GET',
+    url: `/student/levels/${id}`,
+  })
+}
+
+/**
  * Get activity log
  */
 export async function getActivityLog(): Promise<ApiResponse<ActivityLog[]>> {
