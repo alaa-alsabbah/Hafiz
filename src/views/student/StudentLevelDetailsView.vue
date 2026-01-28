@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { STUDENT_LABELS, STUDENT_LEVEL_TABLE_LABELS } from '@/config/student.constants'
 import { DataTable, AppLoading } from '@/components/common'
-import { getStudentLevels, getStudentLevel, type StudentLevel } from '@/services/student.service'
+import { getStudentLevels, getStudentLevel, exportStudentLevel, type StudentLevel } from '@/services/student.service'
 import { ApiException } from '@/services/api'
 
 const loading = ref(true)
@@ -12,6 +12,7 @@ const levels = ref<StudentLevel[]>([])
 const isDialogOpen = ref(false)
 const dialogLoading = ref(false)
 const selectedLevel = ref<StudentLevel | null>(null)
+const exportLoadingId = ref<number | null>(null)
 
 const columns = [
   { key: 'name', label: STUDENT_LEVEL_TABLE_LABELS.LEVEL_NUMBER },
@@ -83,6 +84,29 @@ async function openLevelDetails(row: StudentLevel) {
 function closeDialog() {
   isDialogOpen.value = false
 }
+
+async function handleExport(row: StudentLevel) {
+  try {
+    exportLoadingId.value = row.id
+    const response = await exportStudentLevel(row.id)
+
+    if (response.success && response.data) {
+      // Open exported level in a new tab/window
+      window.open(response.data, '_blank')
+    } else {
+      error.value = response.message || 'فشل تحميل ملف المستوى'
+    }
+  } catch (err) {
+    if (err instanceof ApiException) {
+      error.value = err.message || 'حدث خطأ أثناء تحميل ملف المستوى'
+    } else {
+      error.value = 'حدث خطأ غير متوقع'
+    }
+    console.error('Student level export error:', err)
+  } finally {
+    exportLoadingId.value = null
+  }
+}
 </script>
 
 <template>
@@ -119,9 +143,11 @@ function closeDialog() {
               <button
                 type="button"
                 class="student-level-details__action-btn"
-                @click.prevent
+                :disabled="exportLoadingId === row.id"
+                @click.stop.prevent="handleExport(row)"
               >
                 <svg
+                  v-if="exportLoadingId !== row.id"
                   width="16"
                   height="16"
                   viewBox="0 0 16 16"
@@ -136,6 +162,7 @@ function closeDialog() {
                     stroke-linejoin="round"
                   />
                 </svg>
+                <span v-else class="student-level-details__action-spinner"></span>
               </button>
             </template>
           </DataTable>
@@ -226,6 +253,20 @@ function closeDialog() {
       background: rgba(0, 141, 153, 0.12);
       color: rgba(0, 141, 153, 1);
     }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+  }
+
+  &__action-spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 2px solid rgba(148, 163, 184, 0.5);
+    border-top-color: rgba(0, 141, 153, 1);
+    animation: spin 0.6s linear infinite;
   }
 
   &__dialog-backdrop {
@@ -308,6 +349,15 @@ function closeDialog() {
     margin: $spacing-2 0 0;
     line-height: 1.7;
     text-align: right;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
   }
 }
 </style>

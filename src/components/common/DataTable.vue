@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import BaseTable from './BaseTable.vue'
 
 interface Column {
@@ -42,7 +41,15 @@ const emit = defineEmits<{
         :loading-message="loadingMessage"
         :row-key="rowKey"
         @row-click="(row, index) => emit('row-click', row, index)"
-      />
+      >
+        <!-- Forward all scoped slots to BaseTable -->
+        <template
+          v-for="(_, slotName) in $slots"
+          #[slotName]="slotProps"
+        >
+          <slot :name="slotName" v-bind="slotProps" />
+        </template>
+      </BaseTable>
     </div>
   </div>
 </template>
