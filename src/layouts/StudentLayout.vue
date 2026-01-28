@@ -43,6 +43,12 @@ const menuItems = computed(() =>
   }))
 )
 
+// Get page title based on current route
+const pageTitle = computed(() => {
+  const currentMenuItem = STUDENT_MENU_ITEMS.find(item => item.name === route.name)
+  return currentMenuItem?.label || STUDENT_LABELS.PAGE_TITLE
+})
+
 const isActiveRoute = (routeName: string) => {
   return route.name === routeName
 }
@@ -146,7 +152,7 @@ onUnmounted(() => {
       <header class="student-layout__header">
         <div class="student-layout__header-content">
           <h1 class="student-layout__header-title">
-            {{ STUDENT_LABELS.PAGE_TITLE }}
+            {{ pageTitle }}
           </h1>
 
           <div class="student-layout__header-left">

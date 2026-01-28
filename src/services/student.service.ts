@@ -35,10 +35,15 @@ export interface StudentDashboard {
 
 export interface DailyTask {
   id: number
-  title: string
-  description: string
+  student_id: number
+  from_to: string
+  listening: string
+  repetition: string
+  link: string
+  review: string
   due_date: string
-  status: string
+  created_at: string
+  completed: boolean
 }
 
 export interface LevelDetail {
@@ -66,10 +71,21 @@ export async function getStudentDashboard(): Promise<ApiResponse<StudentDashboar
 /**
  * Get daily tasks
  */
-export async function getDailyTasks(): Promise<ApiResponse<DailyTask[]>> {
+export async function getDailyTasks(isCompleted: boolean = false): Promise<ApiResponse<DailyTask[]>> {
+  const isCompletedParam = isCompleted ? 1 : 0
   return apiRequest<DailyTask[]>({
     method: 'GET',
-    url: STUDENT_API_ENDPOINTS.DAILY_TASKS,
+    url: `/student/tasks/${isCompletedParam}`,
+  })
+}
+
+/**
+ * Complete a task
+ */
+export async function completeTask(taskId: number): Promise<ApiResponse<void>> {
+  return apiRequest<void>({
+    method: 'POST',
+    url: `/student/tasks/${taskId}/complete`,
   })
 }
 
