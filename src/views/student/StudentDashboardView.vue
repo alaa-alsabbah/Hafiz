@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getStudentDashboard, type StudentDashboard } from '@/services/student.service'
 import { ApiException } from '@/services/api'
+import { AppLoading } from '@/components/common'
 import quranImage from '@/assets/img/quran.svg'
 import starIcon from '@/assets/img/icons/starGreen.svg'
 import flashIcon from '@/assets/img/icons/flash.svg'
@@ -75,6 +76,15 @@ onMounted(() => {
 
 <template>
   <div class="student-dashboard" data-component="StudentDashboardView">
+    <!-- Loading State (initial full-area loader) -->
+    <AppLoading
+      v-if="loading && !dashboardData && !error"
+      :full-screen="false"
+      size="md"
+      text="جاري تحميل لوحة التحكم..."
+    />
+
+    <template v-else>
     <!-- Welcome Banner Section -->
     <section class="student-dashboard__banner">
       <div class="student-dashboard__banner-content">
@@ -188,15 +198,11 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- Loading State -->
-    <div v-if="loading && !dashboardData" class="student-dashboard__loading">
-      <p>جاري التحميل...</p>
-    </div>
-
-    <!-- Error State -->
-    <div v-if="error" class="student-dashboard__error">
-      <p>{{ error }}</p>
-    </div>
+      <!-- Error State -->
+      <div v-if="error" class="student-dashboard__error">
+        <p>{{ error }}</p>
+      </div>
+    </template>
   </div>
 </template>
 

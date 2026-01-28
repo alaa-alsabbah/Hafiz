@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { getDailyTasks, completeTask, type DailyTask } from '@/services/student.service'
 import { ApiException } from '@/services/api'
 import { BaseButton, BaseCheckbox } from '@/components/ui'
+import { AppLoading } from '@/components/common'
 import { STUDENT_LABELS } from '@/config/student.constants'
 
 const loading = ref(true)
@@ -141,9 +142,7 @@ const switchTab = (tab: 'daily' | 'completed') => {
 
     <!-- Tasks Cards -->
     <div class="student-daily-tasks__content">
-      <div v-if="loading" class="student-daily-tasks__loading">
-        <p>جاري التحميل...</p>
-      </div>
+      <AppLoading v-if="loading" :full-screen="false" size="lg" />
 
       <div v-else-if="error" class="student-daily-tasks__error">
         <p>{{ error }}</p>
@@ -540,7 +539,6 @@ const switchTab = (tab: 'daily' | 'completed') => {
     }
   }
 
-  &__loading,
   &__error,
   &__empty {
     text-align: center;
