@@ -46,10 +46,11 @@ export interface DailyTask {
   completed: boolean
 }
 
-export interface LevelDetail {
+export interface StudentLevel {
   id: number
-  level_name: string
-  progress: number
+  name: string
+  description: string | null
+  created_at: string
 }
 
 export interface ActivityLog {
@@ -90,12 +91,12 @@ export async function completeTask(taskId: number): Promise<ApiResponse<void>> {
 }
 
 /**
- * Get level details
+ * Get student levels list
  */
-export async function getLevelDetails(): Promise<ApiResponse<LevelDetail>> {
-  return apiRequest<LevelDetail>({
+export async function getStudentLevels(): Promise<ApiResponse<StudentLevel[]>> {
+  return apiRequest<StudentLevel[]>({
     method: 'GET',
-    url: STUDENT_API_ENDPOINTS.LEVEL_DETAILS,
+    url: '/student/levels',
   })
 }
 

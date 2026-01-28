@@ -3,11 +3,12 @@ import { ref, onMounted, computed } from 'vue'
 import { getDailyTasks, completeTask, type DailyTask } from '@/services/student.service'
 import { ApiException } from '@/services/api'
 import { BaseButton, BaseCheckbox } from '@/components/ui'
-import { AppLoading } from '@/components/common'
+import { AppLoading, DataTable } from '@/components/common'
 import { STUDENT_LABELS } from '@/config/student.constants'
 
 const loading = ref(true)
 const activeTab = ref<'daily' | 'completed'>('daily')
+const viewMode = ref<'cards' | 'grid'>('cards')
 const tasks = ref<DailyTask[]>([])
 const error = ref<string | null>(null)
 
@@ -109,6 +110,20 @@ const currentTasks = computed(() => {
   })
 })
 
+// Table view data (grid option)
+const tableColumns = [
+  { key: 'index', label: '#', align: 'center' as const, width: '80px' },
+  { key: 'from_to', label: 'الواجب', align: 'right' as const },
+  { key: 'due_date', label: 'تاريخ', align: 'right' as const },
+]
+
+const tableData = computed(() =>
+  currentTasks.value.map((task, index) => ({
+    ...task,
+    index: index + 1,
+  }))
+)
+
 onMounted(() => {
   fetchTasks()
 })
@@ -118,25 +133,39 @@ const switchTab = (tab: 'daily' | 'completed') => {
   activeTab.value = tab
   fetchTasks()
 }
+
+const toggleViewMode = () => {
+  viewMode.value = viewMode.value === 'cards' ? 'grid' : 'cards'
+}
 </script>
 
 <template>
   <div class="student-daily-tasks" data-component="StudentDailyTasksView">
-    <!-- Tabs -->
-    <div class="student-daily-tasks__tabs">
+    <!-- Tabs + View Toggle -->
+    <div class="student-daily-tasks__top-row">
+      <div class="student-daily-tasks__tabs">
+        <button
+          class="student-daily-tasks__tab"
+          :class="{ 'student-daily-tasks__tab--active': activeTab === 'daily' }"
+          @click="switchTab('daily')"
+        >
+          {{ STUDENT_LABELS.DAILY_TASKS }}
+        </button>
+        <button
+          class="student-daily-tasks__tab"
+          :class="{ 'student-daily-tasks__tab--active': activeTab === 'completed' }"
+          @click="switchTab('completed')"
+        >
+          الواجبات المنجزة
+        </button>
+      </div>
+
       <button
-        class="student-daily-tasks__tab"
-        :class="{ 'student-daily-tasks__tab--active': activeTab === 'daily' }"
-        @click="switchTab('daily')"
+        type="button"
+        class="student-daily-tasks__view-toggle"
+        @click="toggleViewMode"
       >
-        {{ STUDENT_LABELS.DAILY_TASKS }}
-      </button>
-      <button
-        class="student-daily-tasks__tab"
-        :class="{ 'student-daily-tasks__tab--active': activeTab === 'completed' }"
-        @click="switchTab('completed')"
-      >
-        الواجبات المنجزة
+        {{ viewMode === 'cards' ? 'عرض كجدول' : 'عرض كبطاقات' }}
       </button>
     </div>
 
@@ -160,91 +189,123 @@ const switchTab = (tab: 'daily' | 'completed') => {
         </p>
       </div>
 
-      <div v-else class="student-daily-tasks__cards">
-        <div
-          v-for="task in currentTasks"
-          :key="task.id"
-          class="student-daily-tasks__card"
-          :class="{ 'student-daily-tasks__card--completed': task.completed }"
-        >
-          <!-- Task Header: Tag and Title -->
-          <div class="student-daily-tasks__card-header">
-            <h3 class="student-daily-tasks__card-title">الواجب</h3>
-
-            <div
-              class="student-daily-tasks__card-tag"
-              :class="{ 'student-daily-tasks__card-tag--active': !task.completed }"
-            >
-              {{ task.from_to }}
-            </div>
-          </div>
-
-          <!-- Task Requirements -->
-          <div class="student-daily-tasks__card-requirements">
-          <!-- Listening -->
-          <label class="student-daily-tasks__requirement">
-            <BaseCheckbox
-              :model-value="taskChecks[task.id]?.listening || false"
-              :disabled="task.completed"
-              @update:model-value="(val) => updateCheck(task.id, 'listening', val)"
-            />
-            <span class="student-daily-tasks__requirement-text" :class="{ 'student-daily-tasks__requirement-text--checked': taskChecks[task.id]?.listening }">
-              الاستماع ({{ task.listening }})
-            </span>
-          </label>
-
-          <!-- Repetition -->
-          <label class="student-daily-tasks__requirement">
-            <BaseCheckbox
-              :model-value="taskChecks[task.id]?.repetition || false"
-              :disabled="task.completed"
-              @update:model-value="(val) => updateCheck(task.id, 'repetition', val)"
-            />
-            <span class="student-daily-tasks__requirement-text" :class="{ 'student-daily-tasks__requirement-text--checked': taskChecks[task.id]?.repetition }">
-              التكرار ({{ task.repetition }})
-            </span>
-          </label>
-
-          <!-- Link -->
-          <label class="student-daily-tasks__requirement">
-            <BaseCheckbox
-              :model-value="taskChecks[task.id]?.link || false"
-              :disabled="task.completed"
-              @update:model-value="(val) => updateCheck(task.id, 'link', val)"
-            />
-            <span class="student-daily-tasks__requirement-text" :class="{ 'student-daily-tasks__requirement-text--checked': taskChecks[task.id]?.link }">
-              الربط ({{ task.link }})
-            </span>
-          </label>
-
-          <!-- Review -->
-          <label class="student-daily-tasks__requirement">
-            <BaseCheckbox
-              :model-value="taskChecks[task.id]?.review || false"
-              :disabled="task.completed"
-              @update:model-value="(val) => updateCheck(task.id, 'review', val)"
-            />
-            <span class="student-daily-tasks__requirement-text" :class="{ 'student-daily-tasks__requirement-text--checked': taskChecks[task.id]?.review }">
-              مراجعة ({{ task.review }})
-            </span>
-          </label>
-          </div>
-
-          <!-- Send Button -->
-          <BaseButton
-            v-if="activeTab === 'daily'"
-            :disabled="!isTaskComplete(task.id) || task.completed"
-            variant="primary"
-            size="sm"
-            block
-            class="student-daily-tasks__card-button"
-            @click="handleCompleteTask(task.id)"
+      <div v-else>
+        <!-- Cards view -->
+        <div v-if="viewMode === 'cards'" class="student-daily-tasks__cards">
+          <div
+            v-for="task in currentTasks"
+            :key="task.id"
+            class="student-daily-tasks__card"
+            :class="{ 'student-daily-tasks__card--completed': task.completed }"
           >
-            <span>ارسال</span>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M13 8L3 8M3 8L7 4M3 8L7 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </BaseButton>
+            <!-- Task Header: Tag and Title -->
+            <div class="student-daily-tasks__card-header">
+              <h3 class="student-daily-tasks__card-title">الواجب</h3>
+
+              <div
+                class="student-daily-tasks__card-tag"
+                :class="{ 'student-daily-tasks__card-tag--active': !task.completed }"
+              >
+                {{ task.from_to }}
+              </div>
+            </div>
+
+            <!-- Task Requirements -->
+            <div class="student-daily-tasks__card-requirements">
+              <!-- Listening -->
+              <label class="student-daily-tasks__requirement">
+                <BaseCheckbox
+                  :model-value="taskChecks[task.id]?.listening || false"
+                  :disabled="task.completed"
+                  @update:model-value="(val) => updateCheck(task.id, 'listening', val)"
+                />
+                <span
+                  class="student-daily-tasks__requirement-text"
+                  :class="{ 'student-daily-tasks__requirement-text--checked': taskChecks[task.id]?.listening }"
+                >
+                  الاستماع ({{ task.listening }})
+                </span>
+              </label>
+
+              <!-- Repetition -->
+              <label class="student-daily-tasks__requirement">
+                <BaseCheckbox
+                  :model-value="taskChecks[task.id]?.repetition || false"
+                  :disabled="task.completed"
+                  @update:model-value="(val) => updateCheck(task.id, 'repetition', val)"
+                />
+                <span
+                  class="student-daily-tasks__requirement-text"
+                  :class="{ 'student-daily-tasks__requirement-text--checked': taskChecks[task.id]?.repetition }"
+                >
+                  التكرار ({{ task.repetition }})
+                </span>
+              </label>
+
+              <!-- Link -->
+              <label class="student-daily-tasks__requirement">
+                <BaseCheckbox
+                  :model-value="taskChecks[task.id]?.link || false"
+                  :disabled="task.completed"
+                  @update:model-value="(val) => updateCheck(task.id, 'link', val)"
+                />
+                <span
+                  class="student-daily-tasks__requirement-text"
+                  :class="{ 'student-daily-tasks__requirement-text--checked': taskChecks[task.id]?.link }"
+                >
+                  الربط ({{ task.link }})
+                </span>
+              </label>
+
+              <!-- Review -->
+              <label class="student-daily-tasks__requirement">
+                <BaseCheckbox
+                  :model-value="taskChecks[task.id]?.review || false"
+                  :disabled="task.completed"
+                  @update:model-value="(val) => updateCheck(task.id, 'review', val)"
+                />
+                <span
+                  class="student-daily-tasks__requirement-text"
+                  :class="{ 'student-daily-tasks__requirement-text--checked': taskChecks[task.id]?.review }"
+                >
+                  مراجعة ({{ task.review }})
+                </span>
+              </label>
+            </div>
+
+            <!-- Send Button -->
+            <BaseButton
+              v-if="activeTab === 'daily'"
+              :disabled="!isTaskComplete(task.id) || task.completed"
+              variant="primary"
+              size="sm"
+              block
+              class="student-daily-tasks__card-button"
+              @click="handleCompleteTask(task.id)"
+            >
+              <span>ارسال</span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M13 8L3 8M3 8L7 4M3 8L7 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </BaseButton>
+          </div>
+        </div>
+
+        <!-- Grid/table view -->
+        <div v-else class="student-daily-tasks__grid">
+          <DataTable
+            :columns="tableColumns"
+            :data="tableData"
+            :loading="loading"
+            empty-message="لا توجد واجبات"
+            loading-message="جاري تحميل الواجبات..."
+          />
         </div>
       </div>
     </div>
@@ -263,6 +324,18 @@ const switchTab = (tab: 'daily' | 'completed') => {
     padding: 0 $spacing-2;
   }
 
+  &__top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-4;
+
+    @include sm-max {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
   &__tabs {
     display: inline-flex;
     background: rgba(255, 255, 255, 0.9);
@@ -276,6 +349,31 @@ const switchTab = (tab: 'daily' | 'completed') => {
     @include sm-max {
       width: 100%;
       align-self: stretch;
+    }
+  }
+
+  &__view-toggle {
+    border: 1px solid var(--color-border);
+    background-color: #fff;
+    color: var(--color-text-secondary);
+    border-radius: $radius-full;
+    padding: $spacing-2 $spacing-4;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-2;
+    transition: all $transition-fast;
+
+    &:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      box-shadow: $shadow-sm;
+    }
+
+    @include sm-max {
+      align-self: flex-end;
     }
   }
 
@@ -318,6 +416,15 @@ const switchTab = (tab: 'daily' | 'completed') => {
 
   &__content {
     width: 100%;
+  }
+
+  &__grid {
+    margin-top: $spacing-4;
+
+    .base-table__table {
+      border-radius: $radius-xl;
+      overflow: hidden;
+    }
   }
 
   &__cards {

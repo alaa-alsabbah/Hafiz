@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { STUDENT_LABELS } from '@/config/student.constants'
-
 </script>
 
 <template>
