@@ -182,6 +182,8 @@ function handlePageSizeChange(event: Event) {
 <style lang="scss" scoped>
 .base-table {
   width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 
   &__loading,
   &__empty {
@@ -193,15 +195,20 @@ function handlePageSizeChange(event: Event) {
 
   &__table {
     width: 100%;
+    min-width: 600px;
     border-collapse: collapse;
     background: var(--color-background-card);
     border-radius: $radius-xl;
     overflow: hidden;
 
+    @include sm-max {
+      min-width: 500px;
+    }
+
     thead {
-      background-color: rgba(236, 244, 233, 1);
-      border-top: 1px solid rgba(236, 244, 233, 1);
-      border-bottom: 1px solid rgba(236, 244, 233, 1);
+      background-color: #ECFDF5;
+      border-top: 1px solid #ECF4E9;
+      border-bottom:  1px solid #ECF4E9;
 
       th {
         padding: $spacing-4;
@@ -209,6 +216,11 @@ function handlePageSizeChange(event: Event) {
         font-weight: $font-weight-bold;
         color: var(--color-text-primary);
         font-size: $font-size-sm;
+
+        @include sm-max {
+          padding: $spacing-2 $spacing-3;
+          font-size: $font-size-xs;
+        }
       }
     }
 
@@ -231,6 +243,11 @@ function handlePageSizeChange(event: Event) {
           text-align: right;
           color: var(--color-text-primary);
           font-size: $font-size-sm;
+
+          @include sm-max {
+            padding: $spacing-2 $spacing-3;
+            font-size: $font-size-xs;
+          }
         }
       }
     }

@@ -173,6 +173,14 @@ async function handleSubmit() {
   z-index: 1000;
   padding: $spacing-4;
   direction: rtl;
+  overflow-y: auto;
+
+  @include sm-max {
+    padding: $spacing-3;
+    align-items: flex-start;
+    padding-top: $spacing-6;
+    padding-bottom: $spacing-6;
+  }
 
   &__content {
     position: relative;
@@ -182,6 +190,12 @@ async function handleSubmit() {
     max-width: 480px;
     width: 100%;
     box-shadow: $shadow-lg;
+
+    @include sm-max {
+      padding: $spacing-4 $spacing-3;
+      border-radius: $radius-lg;
+      margin: auto $spacing-2;
+    }
   }
 
   &__close {
@@ -215,6 +229,12 @@ async function handleSubmit() {
     font-weight: $font-weight-bold;
     color: var(--color-text-primary);
     margin: 0 0 $spacing-6 0;
+
+    @include sm-max {
+      font-size: $font-size-lg;
+      margin-bottom: $spacing-4;
+      padding-left: $spacing-10;
+    }
   }
 
   &__form {
@@ -269,14 +289,26 @@ async function handleSubmit() {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    
+    flex-wrap: wrap;
     gap: $spacing-3;
     margin-top: $spacing-2;
+
+    @include sm-max {
+      flex-direction: column;
+      width: 100%;
+    }
   }
 
   &__btn {
     padding: $spacing-3 $spacing-6;
     border-radius: $radius-lg;
+
+    @include sm-max {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     font-size: $font-size-base;
     font-weight: $font-weight-bold;
     cursor: pointer;

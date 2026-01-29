@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { STUDENT_LABELS, ACTIVITY_LOG_LABELS } from '@/config/student.constants'
+import { ACTIVITY_LOG_LABELS } from '@/config/student.constants'
 import { getStudentCalendar, type CalendarEntry } from '@/services/student.service'
 import IconArrowLeft from '@/components/icons/IconArrowLeft.vue'
 import IconArrowRight from '@/components/icons/IconArrowRight.vue'
@@ -271,9 +271,21 @@ watch(
   background-color: var(--color-background-card);
   border-radius: $radius-xl;
   direction: rtl;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  @include sm-max {
+    padding: $spacing-3;
+    border-radius: $radius-lg;
+  }
 
   &__header {
     margin-bottom: $spacing-6;
+
+    @include sm-max {
+      margin-bottom: $spacing-4;
+    }
   }
 
   &__title {
@@ -282,6 +294,11 @@ watch(
     color: var(--color-text-primary);
     margin: 0 0 $spacing-10 0;
     text-align: right;
+
+    @include sm-max {
+      font-size: $font-size-xl;
+      margin-bottom: $spacing-4;
+    }
   }
 
   &__row {
@@ -290,6 +307,12 @@ watch(
     justify-content: space-between;
     flex-wrap: wrap;
     gap: $spacing-4;
+
+    @include sm-max {
+      flex-direction: column;
+      align-items: stretch;
+      gap: $spacing-3;
+    }
   }
 
   &__nav {
@@ -331,6 +354,11 @@ watch(
     order: 2;
     flex: 1;
     justify-content: center;
+
+    @include sm-max {
+      justify-content: center;
+      gap: $spacing-2;
+    }
   }
 
   &__month-year {
@@ -338,6 +366,11 @@ watch(
     font-weight: $font-weight-bold;
     color: var(--color-text-primary);
     order: 3;
+
+    @include sm-max {
+      font-size: $font-size-base;
+      text-align: center;
+    }
   }
 
   &__loading {
@@ -361,6 +394,12 @@ watch(
     width: 100%;
     max-width: 100%;
     margin-top: $spacing-6;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    @include sm-max {
+      margin-top: $spacing-4;
+    }
   }
 
   &__legend-item {
@@ -387,6 +426,7 @@ watch(
 
   &__calendar {
     width: 100%;
+    min-width: 280px;
     border: 1px solid var(--color-border);
     border-radius: $radius-lg;
     overflow: hidden;
@@ -401,11 +441,16 @@ watch(
   }
 
   &__weekday {
-    padding: $spacing-2 $spacing-3;
+    padding: $spacing-2 $spacing-2;
     font-size: $font-size-xs;
     font-weight: $font-weight-medium;
     color: var(--color-text-secondary);
     text-align: center;
+
+    @include sm-max {
+      padding: $spacing-1 $spacing-2;
+      font-size: 0.65rem;
+    }
   }
 
   &__grid {
@@ -434,6 +479,11 @@ watch(
     min-height: 44px;
     border-left: 1px solid var(--color-border);
     background-color: #fff;
+
+    @include sm-max {
+      min-height: 36px;
+      font-size: $font-size-xs;
+    }
 
     &:last-child {
       border-left: none;

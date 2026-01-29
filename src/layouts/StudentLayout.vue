@@ -729,6 +729,7 @@ onUnmounted(() => {
     overflow-x: hidden;
 
     @include sm-max {
+      padding: $spacing-4 $spacing-3;
       background-color: #F8FFFB;
     }
   }

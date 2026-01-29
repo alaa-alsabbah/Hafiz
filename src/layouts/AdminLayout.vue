@@ -412,6 +412,12 @@ onUnmounted(() => {
     background-color: #fff;
     border-top-right-radius: $radius-2xl;
     direction: rtl;
+
+    @include sm-max {
+      padding: $spacing-3 $spacing-4;
+      flex-wrap: wrap;
+      gap: $spacing-2;
+    }
   }
 
   &__header-left {
@@ -470,6 +476,10 @@ onUnmounted(() => {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
+
+    @include sm-max {
+      padding: $spacing-4 $spacing-3;
+    }
   }
 
 }

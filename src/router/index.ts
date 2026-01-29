@@ -128,9 +128,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/teacher/students',
-    name: 'teacher-students',
-    component: () => import('@/views/teacher/TeacherDashboardView.vue'), // placeholder
-    meta: { requiresAuth: true, requiresRole: 'teacher', layout: 'teacher' }
+    redirect: '/teacher/dashboard'
   },
   {
     path: '/teacher/weekly-report',

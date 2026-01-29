@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { getDailyTasks, completeTask, type DailyTask } from '@/services/student.service'
 import { ApiException } from '@/services/api'
 import { BaseButton, BaseCheckbox } from '@/components/ui'
@@ -8,7 +8,12 @@ import { STUDENT_LABELS } from '@/config/student.constants'
 
 const loading = ref(true)
 const activeTab = ref<'daily' | 'completed'>('daily')
+
 const viewMode = ref<'cards' | 'grid'>('cards')
+
+function switchTab(tab: 'daily' | 'completed') {
+  activeTab.value = tab
+}
 const tasks = ref<DailyTask[]>([])
 const error = ref<string | null>(null)
 
@@ -128,11 +133,9 @@ onMounted(() => {
   fetchTasks()
 })
 
-// Refetch when tab changes
-const switchTab = (tab: 'daily' | 'completed') => {
-  activeTab.value = tab
+watch(activeTab, () => {
   fetchTasks()
-}
+})
 
 const toggleViewMode = () => {
   viewMode.value = viewMode.value === 'cards' ? 'grid' : 'cards'
@@ -336,22 +339,6 @@ const toggleViewMode = () => {
     }
   }
 
-  &__tabs {
-    display: inline-flex;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: $radius-lg;
-    padding: 4px;
-    box-shadow: $shadow-sm;
-    gap: 0;
-    align-self: flex-start;
-    min-width: 300px;
-
-    @include sm-max {
-      width: 100%;
-      align-self: stretch;
-    }
-  }
-
   &__view-toggle {
     border: 1px solid var(--color-border);
     background-color: #fff;
@@ -374,43 +361,6 @@ const toggleViewMode = () => {
 
     @include sm-max {
       align-self: flex-end;
-    }
-  }
-
-  &__tab {
-    padding: $spacing-2 $spacing-5;
-    border: none;
-    background: transparent;
-    color: var(--color-text-secondary);
-    font-weight: $font-weight-medium;
-    font-size: $font-size-sm;
-    cursor: pointer;
-    transition: all $transition-fast;
-    border-radius: $radius-md;
-    flex: 1;
-
-    @include sm-max {
-      padding: $spacing-2 $spacing-3;
-      font-size: $font-size-xs;
-    }
-
-    &:first-child {
-      border-top-right-radius: $radius-lg;
-      border-bottom-right-radius: $radius-lg;
-    }
-
-    &:last-child {
-      border-top-left-radius: $radius-lg;
-      border-bottom-left-radius: $radius-lg;
-    }
-
-    &--active {
-      background: linear-gradient(90deg, #009968 0%, #136047 100%);
-      color: #fff;
-    }
-
-    &:not(&--active):hover {
-      background: var(--color-background);
     }
   }
 

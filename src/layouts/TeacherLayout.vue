@@ -12,7 +12,7 @@ import {
   IconLogout,
   IconArrowLeft,
 } from '@/components/icons'
-import { TEACHER_MENU_ITEMS, DASHBOARD_LABELS } from '@/config/teacher.constants'
+import { TEACHER_MENU_ITEMS, STUDENT_MANAGEMENT_LABELS } from '@/config/teacher.constants'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,11 +23,12 @@ const isSidebarOpen = ref(false)
 const currentUser = computed(() => authStore.currentUser)
 
 // Import SVG icons
-import gridIcon from '@/assets/img/icons/SquaresFour.svg'
+import hatIcon from '@/assets/img/icons/hatIcon-sidemenu.svg'
 
 // Map icon strings to icon components or SVG paths
 const iconMap: Record<string, any> = {
-  grid: gridIcon,
+  'hat-sidemenu': hatIcon,
+  grid: hatIcon,
   user: IconUser,
   calendar: IconCalendar,
   'graduation-cap': IconGraduationCap,
@@ -35,7 +36,7 @@ const iconMap: Record<string, any> = {
 
 const menuItems = computed(() =>
   TEACHER_MENU_ITEMS.map((item) => {
-    const icon = iconMap[item.icon] || gridIcon
+    const icon = iconMap[item.icon] || hatIcon
     return {
       ...item,
       icon,
@@ -43,6 +44,14 @@ const menuItems = computed(() =>
     } as typeof item & { icon: any; isSvg: boolean }
   })
 )
+
+const pageTitle = computed(() => {
+  const currentMenuItem = TEACHER_MENU_ITEMS.find((item) => item.name === route.name)
+  if (currentMenuItem?.name === 'teacher-dashboard') {
+    return STUDENT_MANAGEMENT_LABELS.PAGE_TITLE
+  }
+  return currentMenuItem?.label || 'لوحة التحكم'
+})
 
 const isActiveRoute = (routeName: string) => {
   return route.name === routeName
@@ -157,7 +166,7 @@ onUnmounted(() => {
       <header class="teacher-layout__header">
         <div class="teacher-layout__header-content">
           <h1 class="teacher-layout__header-title">
-            {{ DASHBOARD_LABELS.PAGE_TITLE }}
+            {{ pageTitle }}
           </h1>
 
           <div class="teacher-layout__header-left">
@@ -505,6 +514,10 @@ onUnmounted(() => {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
+
+    @include sm-max {
+      padding: $spacing-4 $spacing-3;
+    }
   }
 
 }

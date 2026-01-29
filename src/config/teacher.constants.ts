@@ -147,48 +147,51 @@ export const TEACHER_LABELS = {
   TEACHERS: 'المعلمين',
 } as const
 
-// Teacher menu items
+// Teacher menu items - only الطلاب for teacher role (links to dashboard)
 export const TEACHER_MENU_ITEMS = [
   {
-    label: DASHBOARD_LABELS.PAGE_TITLE,
+    label: TEACHER_LABELS.STUDENTS,
     path: '/teacher/dashboard',
     name: 'teacher-dashboard',
-    icon: 'grid',
-  },
-  {
-    label: TEACHER_LABELS.STUDENTS,
-    path: '/teacher/students',
-    name: 'teacher-students',
-    icon: 'user',
-  },
-  {
-    label: WEEKLY_REPORT_LABELS.PAGE_TITLE,
-    path: '/teacher/weekly-report',
-    name: 'teacher-weekly-report',
-    icon: 'calendar',
-  },
-  {
-    label: TEACHER_LABELS.PRESENTATION_TEST,
-    path: '/teacher/presentation-test',
-    name: 'teacher-presentation-test',
-    icon: 'graduation-cap',
-  },
-  {
-    label: TEACHER_LABELS.PERMISSION,
-    path: '/teacher/permission',
-    name: 'teacher-permission',
-    icon: 'calendar',
-  },
-  {
-    label: TEACHER_LABELS.EVALUATIONS,
-    path: '/teacher/evaluations',
-    name: 'teacher-evaluations',
-    icon: 'calendar',
-  },
-  {
-    label: TEACHER_LABELS.TEACHERS,
-    path: '/teacher/teachers',
-    name: 'teacher-teachers',
-    icon: 'user',
+    icon: 'hat-sidemenu',
   },
 ] as const
+
+// Student management page labels
+export const STUDENT_MANAGEMENT_LABELS = {
+  PAGE_TITLE: 'إدارة الطلاب',
+  SECTION_TITLE: 'نظرة عامة على جميع الطلاب',
+  PROGRAM_FILTER_ALL: 'الكل',
+  PROGRAM_FILTER_HAFIZ: 'برنامج حفظة',
+  PROGRAM_FILTER_FURSAN: 'برنامج فرسان',
+  EXPORT: 'تصدير',
+  SEARCH_PLACEHOLDER: 'ابحث بالاسم أو البريد الإلكتروني...',
+  STATUS_ALL: 'جميع الحالات',
+  STUDENT_SELECT_PLACEHOLDER: 'اختر طالباً محدداً',
+  TABLE: {
+    STUDENT: 'طالب',
+    PROGRAM: 'البرنامج',
+    TRACK: 'المسار',
+    STATUS: 'حالة',
+    RATING: 'تقييم',
+    ACTIONS: 'إجراءات',
+  },
+  ACTIONS: {
+    VIEW_STUDENT: 'عرض الطالب',
+    SEND_EMAIL: 'إرسال بريد إلكتروني',
+    SEND_WHATSAPP: 'إرسال واتساب',
+  },
+  PAGINATION: {
+    SHOW: 'عرض',
+    OF: 'من',
+  },
+} as const
+
+// Status badge colors for student table
+export const STUDENT_STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  مكتمل: { bg: 'rgba(232, 245, 233, 1)', text: '#1b5e20' },
+  'عرض واختبار': { bg: 'rgba(255, 243, 224, 1)', text: '#e65100' },
+  انسحب: { bg: 'rgba(255, 235, 238, 1)', text: '#c62828' },
+  معلق: { bg: 'rgba(255, 248, 225, 1)', text: '#f57f17' },
+  'غير معين': { bg: 'rgba(227, 242, 253, 1)', text: '#1565c0' },
+}

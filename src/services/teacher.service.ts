@@ -32,6 +32,7 @@ export interface Student {
   program_track: string
   teacher: string
   created_at: string
+  status?: string // مكتمل | عرض واختبار | انسحب | معلق | غير معين
 }
 
 // Attendance record interface
@@ -46,23 +47,27 @@ export interface AttendanceRecord {
 }
 
 /**
- * Get all students
+ * Get students with optional program filter
+ * @param programId - 1 for حفظة, 2 for فرسان, undefined/null for all
  */
-export async function getStudents(): Promise<ApiResponse<Student[]>> {
+export async function getStudents(programId?: number | null): Promise<ApiResponse<Student[]>> {
+  const params = new URLSearchParams()
+  if (programId != null && programId > 0) {
+    params.append('program_id', String(programId))
+  }
+  const query = params.toString()
+  const url = query ? `${TEACHER_API_ENDPOINTS.STUDENTS}?${query}` : TEACHER_API_ENDPOINTS.STUDENTS
   return apiRequest<Student[]>({
     method: 'GET',
-    url: TEACHER_API_ENDPOINTS.STUDENTS,
+    url,
   })
 }
 
 /**
- * Get students by program
+ * Get students by program (legacy - use getStudents(programId) instead)
  */
 export async function getStudentsByProgram(programId: number): Promise<ApiResponse<Student[]>> {
-  return apiRequest<Student[]>({
-    method: 'GET',
-    url: `${TEACHER_API_ENDPOINTS.STUDENTS_BY_PROGRAM}/${programId}`,
-  })
+  return getStudents(programId)
 }
 
 /**

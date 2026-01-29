@@ -16,13 +16,15 @@ interface Props {
   emptyMessage?: string
   loadingMessage?: string
   rowKey?: string | ((row: any, index: number) => string | number)
+  pageSizeOptions?: number[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   emptyMessage: 'لا توجد بيانات',
   loadingMessage: 'جاري التحميل...',
-  rowKey: (row: any, index: number) => row.id || index
+  rowKey: (row: any, index: number) => row.id || index,
+  pageSizeOptions: () => [5, 10, 25]
 })
 
 const emit = defineEmits<{
@@ -40,6 +42,7 @@ const emit = defineEmits<{
         :empty-message="emptyMessage"
         :loading-message="loadingMessage"
         :row-key="rowKey"
+        :page-size-options="pageSizeOptions"
         @row-click="(row, index) => emit('row-click', row, index)"
       >
         <!-- Forward all scoped slots to BaseTable -->
