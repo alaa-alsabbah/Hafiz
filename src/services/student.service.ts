@@ -8,6 +8,7 @@ const STUDENT_API_ENDPOINTS = {
   DAILY_TASKS: '/student/daily-tasks',
   LEVEL_DETAILS: '/student/level-details',
   ACTIVITY_LOG: '/student/activity-log',
+  CALENDAR: '/student/calendar',
 }
 
 // Student types
@@ -57,6 +58,13 @@ export interface ActivityLog {
   id: number
   action: string
   date: string
+}
+
+export interface CalendarEntry {
+  id: number
+  student_id: number
+  due_date: string
+  status: 'تم الإرسال' | 'متأخر' | 'اترك'
 }
 
 /**
@@ -127,5 +135,20 @@ export async function getActivityLog(): Promise<ApiResponse<ActivityLog[]>> {
   return apiRequest<ActivityLog[]>({
     method: 'GET',
     url: STUDENT_API_ENDPOINTS.ACTIVITY_LOG,
+  })
+}
+
+/**
+ * Get student calendar data (activity status by date)
+ * POST with start_date (YYYY-MM-DD) and end_date (YYYY-MM-DD) in body
+ */
+export async function getStudentCalendar(
+  startDate: string,
+  endDate: string
+): Promise<ApiResponse<CalendarEntry[]>> {
+  return apiRequest<CalendarEntry[]>({
+    method: 'POST',
+    url: STUDENT_API_ENDPOINTS.CALENDAR,
+    data: { start_date: startDate, end_date: endDate },
   })
 }

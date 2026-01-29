@@ -16,6 +16,13 @@ export const STUDENT_LABELS = {
   REQUEST_PERMISSION: 'طلب إذن',
 } as const
 
+export const ACTIVITY_LOG_LABELS = {
+  SUBTITLE: 'ايام لم تسجل بها اي حركات',
+  STATUS_SUBMITTED: 'تم الإرسال',
+  STATUS_LATE: 'تقديم متأخر',
+  STATUS_LEAVE: 'اترك',
+} as const
+
 export const STUDENT_LEVEL_TABLE_LABELS = {
   LEVEL_NUMBER: 'رقم المستوى',
   DETAILS: 'التفاصيل',
