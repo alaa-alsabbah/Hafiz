@@ -1,4 +1,5 @@
 export { default as AppLogo } from './AppLogo.vue'
+export { default as AppFooter } from './AppFooter.vue'
 export { default as AppLoading } from './AppLoading.vue'
 export { default as RegistrationTypeDialog } from './RegistrationTypeDialog.vue'
 export { default as BaseTable } from './BaseTable.vue'

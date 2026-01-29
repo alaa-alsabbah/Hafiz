@@ -57,6 +57,18 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, layout: 'default' }
   },
   {
+    path: '/terms',
+    name: 'terms',
+    component: () => import('@/views/HomeView.vue'), // placeholder
+    meta: { layout: 'default' }
+  },
+  {
+    path: '/privacy',
+    name: 'privacy',
+    component: () => import('@/views/HomeView.vue'), // placeholder
+    meta: { layout: 'default' }
+  },
+  {
     path: '/students',
     name: 'students',
     component: () => import('@/views/DashboardView.vue'), // placeholder

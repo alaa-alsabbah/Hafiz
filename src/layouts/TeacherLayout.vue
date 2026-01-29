@@ -3,6 +3,7 @@ import { computed, ref, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppLogo from '@/components/common/AppLogo.vue'
+import AppFooter from '@/components/common/AppFooter.vue'
 import { NotificationBell } from '@/components/ui'
 import {
   IconUser,
@@ -181,6 +182,8 @@ onUnmounted(() => {
       <main class="teacher-layout__content">
         <slot />
       </main>
+
+      <AppFooter />
     </div>
   </div>
 </template>

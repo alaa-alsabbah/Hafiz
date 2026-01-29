@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppLogo from '@/components/common/AppLogo.vue'
+import AppFooter from '@/components/common/AppFooter.vue'
 import { BaseButton } from '@/components/ui'
 import RegistrationTypeDialog from '@/components/common/RegistrationTypeDialog.vue'
 
@@ -200,8 +201,9 @@ const isActiveRoute = (routeName: string) => {
       <slot />
     </main>
 
-    <!-- Footer -->
-    <footer class="default-layout__footer">
+    <!-- Footer: Simple footer when authenticated, full footer when guest -->
+    <AppFooter v-if="isAuthenticated" />
+    <footer v-else class="default-layout__footer">
       <div class="footer__container">
         <div class="footer__content">
           <div class="footer__section">
