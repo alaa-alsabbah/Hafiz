@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppLogo from '@/components/common/AppLogo.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
+import RequestPermissionDialog from '@/components/common/RequestPermissionDialog.vue'
 import { NotificationBell } from '@/components/ui'
 import {
   IconLogout,
@@ -20,8 +21,13 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const isSidebarOpen = ref(false)
+const showRequestPermissionDialog = ref(false)
 
 const currentUser = computed(() => authStore.currentUser)
+
+function openRequestPermissionDialog() {
+  showRequestPermissionDialog.value = true
+}
 
 // Import SVG icons
 import gridIcon from '@/assets/img/icons/SquaresFour.svg'
@@ -150,7 +156,8 @@ onUnmounted(() => {
 
     <!-- Main area -->
     <div class="student-layout__main">
-      <header class="student-layout__header">
+      <!-- Desktop header -->
+      <header class="student-layout__header student-layout__header--desktop">
         <div class="student-layout__header-content">
           <h1 class="student-layout__header-title">
             {{ pageTitle }}
@@ -179,12 +186,61 @@ onUnmounted(() => {
                 <IconTrophy />
                 <span>{{ STUDENT_LABELS.LEADERBOARD }}</span>
               </button>
-              <button class="student-layout__action-btn student-layout__action-btn--with-label" aria-label="Request Permission">
+              <button
+                class="student-layout__action-btn student-layout__action-btn--with-label"
+                aria-label="Request Permission"
+                @click="openRequestPermissionDialog"
+              >
                 <IconPermission />
                 <span>{{ STUDENT_LABELS.REQUEST_PERMISSION }}</span>
               </button>
               <NotificationBell :count="3" :has-notification="true" />
             </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Mobile header -->
+      <header class="student-layout__header student-layout__header--mobile">
+        <div class="student-layout__mobile-top-bar">
+          <div class="student-layout__mobile-top-left">
+            <button
+              class="student-layout__mobile-toggle"
+              type="button"
+              aria-label="Toggle sidebar"
+              @click="toggleSidebar"
+            >
+              <span class="student-layout__toggle-line" />
+              <span class="student-layout__toggle-line" />
+              <span class="student-layout__toggle-line" />
+            </button>
+          </div>
+          <div class="student-layout__mobile-top-center">
+            <AppLogo size="md" />
+          </div>
+          <div class="student-layout__mobile-top-right">
+            <NotificationBell :count="3" :has-notification="true" />
+          </div>
+        </div>
+        <div class="student-layout__mobile-content-row">
+          <h1 class="student-layout__mobile-title">{{ pageTitle }}</h1>
+          <div class="student-layout__mobile-actions">
+            <button class="student-layout__mobile-action-btn" aria-label="Branch">
+              <IconBranch />
+            </button>
+            <button class="student-layout__mobile-action-btn" aria-label="Refresh">
+              <IconRefresh />
+            </button>
+            <button class="student-layout__mobile-action-btn" aria-label="Leaderboard">
+              <IconTrophy />
+            </button>
+            <button
+              class="student-layout__mobile-action-btn"
+              aria-label="Request Permission"
+              @click="openRequestPermissionDialog"
+            >
+              <IconPermission />
+            </button>
           </div>
         </div>
       </header>
@@ -195,6 +251,8 @@ onUnmounted(() => {
 
       <AppFooter />
     </div>
+
+    <RequestPermissionDialog v-model="showRequestPermissionDialog" />
   </div>
 </template>
 
@@ -403,6 +461,7 @@ onUnmounted(() => {
 
     @include sm-max {
       padding-top: 0;
+      background-color: #F8FFFB;
     }
   }
 
@@ -418,6 +477,114 @@ onUnmounted(() => {
       z-index: 100;
       margin-top: 0;
       padding-top: 0;
+    }
+
+    &--desktop {
+      @include sm-max {
+        display: none;
+      }
+    }
+
+    &--mobile {
+      display: none;
+      flex-direction: column;
+      background-color: #F8FFFB;
+      padding: $spacing-3 $spacing-4;
+      gap: $spacing-4;
+      border-radius: 0;
+      margin-top: 0;
+
+      @include sm-max {
+        display: flex;
+      }
+    }
+  }
+
+  &__mobile-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  &__mobile-top-left {
+    flex: 1;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  &__mobile-top-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  &__mobile-top-right {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+
+    :deep(.notification-bell) {
+      background-color: rgba(236, 253, 245, 1);
+      border: 1px solid rgba(27, 122, 78, 0.2);
+    }
+  }
+
+  &__mobile-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: $spacing-2;
+    cursor: pointer;
+    color: var(--color-text-primary);
+  }
+
+  &__mobile-content-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: $spacing-3;
+  }
+
+  &__mobile-title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: var(--color-text-primary);
+    margin: 0;
+    text-align: right;
+    flex: 1;
+  }
+
+  &__mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    flex-shrink: 0;
+  }
+
+  &__mobile-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 50%;
+    border: none;
+    background-color: rgba(224, 246, 255, 1);
+    cursor: pointer;
+    transition: all $transition-fast;
+
+    &:hover {
+      background-color: rgba(224, 246, 255, 0.8);
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
     }
   }
 
@@ -560,6 +727,10 @@ onUnmounted(() => {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
+
+    @include sm-max {
+      background-color: #F8FFFB;
+    }
   }
 
 }

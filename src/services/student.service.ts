@@ -9,6 +9,7 @@ const STUDENT_API_ENDPOINTS = {
   LEVEL_DETAILS: '/student/level-details',
   ACTIVITY_LOG: '/student/activity-log',
   CALENDAR: '/student/calendar',
+  LEAVES: '/student/leaves',
 }
 
 // Student types
@@ -150,5 +151,21 @@ export async function getStudentCalendar(
     method: 'POST',
     url: STUDENT_API_ENDPOINTS.CALENDAR,
     data: { start_date: startDate, end_date: endDate },
+  })
+}
+
+/**
+ * Submit leave request (استئذان)
+ * POST with from_date, to_date, reason in body
+ */
+export async function submitLeave(
+  fromDate: string,
+  toDate: string,
+  reason: string
+): Promise<ApiResponse<string>> {
+  return apiRequest<string>({
+    method: 'POST',
+    url: STUDENT_API_ENDPOINTS.LEAVES,
+    data: { from_date: fromDate, to_date: toDate, reason },
   })
 }
