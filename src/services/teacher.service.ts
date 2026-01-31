@@ -47,6 +47,16 @@ export interface AttendanceRecord {
 }
 
 /**
+ * Get student by ID
+ */
+export async function getStudentById(studentId: number): Promise<ApiResponse<Student>> {
+  return apiRequest<Student>({
+    method: 'GET',
+    url: `${TEACHER_API_ENDPOINTS.STUDENTS}/${studentId}`,
+  })
+}
+
+/**
  * Get students with optional program filter
  * @param programId - 1 for حفظة, 2 for فرسان, undefined/null for all
  */

@@ -187,6 +187,44 @@ export const STUDENT_MANAGEMENT_LABELS = {
   },
 } as const
 
+// Student profile drawer labels (Overview tab)
+export const STUDENT_PROFILE_LABELS = {
+  TABS: {
+    OVERVIEW: 'نظرة عامة',
+    WEEKLY_RECITATION: 'التسميع الأسبوعي',
+    NOTES: 'ملاحظات',
+    PRESENTATION_TEST: 'العرض والاختبار',
+  },
+  ACTIONS: {
+    SEND_WHATSAPP: 'إرسال واتساب',
+    SEND_EMAIL: 'إرسال بريد إلكتروني',
+    EXPORT: 'تصدير',
+    COPY: 'نسخة',
+  },
+  OVERVIEW: {
+    TITLE: 'نظرة عامة',
+    COUNTRY: 'بلد الإقامة',
+    EDUCATION_LEVEL: 'المستوى التعليمي',
+    HOW_DID_YOU_KNOW: 'كيف سمعت عن البرنامج',
+    EMAIL: 'البريد الإلكتروني',
+    QURAN_LEVEL: 'كم جزء من كتاب الله تحفظ؟',
+    WATCHED_VIDEO: 'شاهدت الفيديو التقديمي للبرنامجين',
+    INTERVIEW_TIME: 'الوقت المناسب للمقابلة',
+    CURRENT_LEVEL: 'المستوى الحالي',
+    TEACHER: 'المعلم المعين',
+    GENDER: 'الجنس',
+    AGE: 'العمر',
+    PHONE: 'رقم الهاتف على واتساب',
+    RESIDENCE: 'مكان الإقامة',
+    HAS_IJAZA: 'رخصة أو شهادة في القرآن الكريم',
+    PROGRAM_TRACK: 'أي مسار تود المشاركة فيه؟',
+    PROGRAM: 'البرنامج',
+    START_DATE: 'تاريخ البدء',
+  },
+  STATUS_ACTIVE: 'نشط',
+  EMPTY: '---',
+} as const
+
 // Status badge colors for student table
 export const STUDENT_STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   مكتمل: { bg: 'rgba(232, 245, 233, 1)', text: '#1b5e20' },

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { DataTable, PageToolbar } from '@/components/common'
+import { DataTable, PageToolbar, StudentProfileDrawer } from '@/components/common'
 import { BaseButton, BaseTabs, BaseDropdown, ActionMenu } from '@/components/ui'
 import { getStudents, type Student } from '@/services/teacher.service'
 import {
@@ -17,6 +17,8 @@ const programFilter = ref<number | null>(null)
 const searchQuery = ref('')
 const statusFilter = ref<string | null>(null)
 const studentFilter = ref<number | null>(null)
+const showProfileDrawer = ref(false)
+const selectedStudentId = ref<number | null>(null)
 
 const programTabs = [
   { id: 'all', label: STUDENT_MANAGEMENT_LABELS.PROGRAM_FILTER_ALL, value: null },
@@ -105,13 +107,18 @@ function handleExport() {
   console.log('Export clicked')
 }
 
+function openStudentProfile(student: Student) {
+  selectedStudentId.value = student.id
+  showProfileDrawer.value = true
+}
+
 function getActionItems(student: Student) {
   return [
     {
       id: 'view',
       label: STUDENT_MANAGEMENT_LABELS.ACTIONS.VIEW_STUDENT,
       icon: 'eye' as const,
-      onClick: () => console.log('View student', student.id),
+      onClick: () => openStudentProfile(student),
     },
     {
       id: 'email',
@@ -244,6 +251,11 @@ onMounted(() => {
         </template>
       </DataTable>
     </div>
+
+    <StudentProfileDrawer
+      v-model="showProfileDrawer"
+      :student-id="selectedStudentId"
+    />
   </div>
 </template>
 
