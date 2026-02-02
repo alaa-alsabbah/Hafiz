@@ -1,6 +1,5 @@
 // Student API service
-import { apiRequest } from './api'
-import type { ApiResponse } from './api'
+import { api, type ApiResponse } from './api'
 
 // Student API endpoints
 const STUDENT_API_ENDPOINTS = {
@@ -72,10 +71,7 @@ export interface CalendarEntry {
  * Get student dashboard data
  */
 export async function getStudentDashboard(): Promise<ApiResponse<StudentDashboard>> {
-  return apiRequest<StudentDashboard>({
-    method: 'GET',
-    url: STUDENT_API_ENDPOINTS.DASHBOARD,
-  })
+  return api.get<StudentDashboard>(STUDENT_API_ENDPOINTS.DASHBOARD)
 }
 
 /**
@@ -83,60 +79,42 @@ export async function getStudentDashboard(): Promise<ApiResponse<StudentDashboar
  */
 export async function getDailyTasks(isCompleted: boolean = false): Promise<ApiResponse<DailyTask[]>> {
   const isCompletedParam = isCompleted ? 1 : 0
-  return apiRequest<DailyTask[]>({
-    method: 'GET',
-    url: `/student/tasks/${isCompletedParam}`,
-  })
+  return api.get<DailyTask[]>(`/student/tasks/${isCompletedParam}`)
 }
 
 /**
  * Complete a task
  */
 export async function completeTask(taskId: number): Promise<ApiResponse<void>> {
-  return apiRequest<void>({
-    method: 'POST',
-    url: `/student/tasks/${taskId}/complete`,
-  })
+  return api.post<void>(`/student/tasks/${taskId}/complete`)
 }
 
 /**
  * Get student levels list
  */
 export async function getStudentLevels(): Promise<ApiResponse<StudentLevel[]>> {
-  return apiRequest<StudentLevel[]>({
-    method: 'GET',
-    url: '/student/levels',
-  })
+  return api.get<StudentLevel[]>('/student/levels')
 }
 
 /**
  * Get single student level by id
  */
 export async function getStudentLevel(id: number): Promise<ApiResponse<StudentLevel>> {
-  return apiRequest<StudentLevel>({
-    method: 'GET',
-    url: `/student/levels/${id}`,
-  })
+  return api.get<StudentLevel>(`/student/levels/${id}`)
 }
 
 /**
  * Export / download a student level by id
  */
 export async function exportStudentLevel(id: number): Promise<ApiResponse<string>> {
-  return apiRequest<string>({
-    method: 'GET',
-    url: `/student/levels/${id}/export`,
-  })
+  return api.get<string>(`/student/levels/${id}/export`)
 }
 
 /**
  * Get activity log
  */
 export async function getActivityLog(): Promise<ApiResponse<ActivityLog[]>> {
-  return apiRequest<ActivityLog[]>({
-    method: 'GET',
-    url: STUDENT_API_ENDPOINTS.ACTIVITY_LOG,
-  })
+  return api.get<ActivityLog[]>(STUDENT_API_ENDPOINTS.ACTIVITY_LOG)
 }
 
 /**
@@ -147,10 +125,9 @@ export async function getStudentCalendar(
   startDate: string,
   endDate: string
 ): Promise<ApiResponse<CalendarEntry[]>> {
-  return apiRequest<CalendarEntry[]>({
-    method: 'POST',
-    url: STUDENT_API_ENDPOINTS.CALENDAR,
-    data: { start_date: startDate, end_date: endDate },
+  return api.post<CalendarEntry[]>(STUDENT_API_ENDPOINTS.CALENDAR, {
+    start_date: startDate,
+    end_date: endDate,
   })
 }
 
@@ -163,9 +140,9 @@ export async function submitLeave(
   toDate: string,
   reason: string
 ): Promise<ApiResponse<string>> {
-  return apiRequest<string>({
-    method: 'POST',
-    url: STUDENT_API_ENDPOINTS.LEAVES,
-    data: { from_date: fromDate, to_date: toDate, reason },
+  return api.post<string>(STUDENT_API_ENDPOINTS.LEAVES, {
+    from_date: fromDate,
+    to_date: toDate,
+    reason,
   })
 }

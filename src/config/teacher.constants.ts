@@ -108,6 +108,121 @@ export const WEEKLY_REPORT_LABELS = {
   },
 }
 
+// Student profile - Attendance log (Weekly Recitation tab)
+export const ATTENDANCE_LOG_LABELS = {
+  TITLE: 'سجل الحضور',
+  ADD_RECORD: 'إضافة سجل',
+  EMPTY: 'لا توجد سجلات حضور',
+  LOADING: 'جاري التحميل...',
+  DATE: 'تاريخ',
+  SESSION: 'جلسة',
+  STATUS: 'الحالة',
+  LAST_PAGE: 'آخر صفحة تم تسميعها',
+  EVALUATION: 'التقييم',
+  ACTIONS: 'إجراء',
+}
+
+// Student profile - Notes tab
+export const NOTE_MAX_LENGTH = 4088
+
+export const NOTES_TAB_LABELS = {
+  TITLE: 'ملاحظات',
+  ADD_NOTE: 'إضافة ملاحظات',
+  NORMAL_TEXT: 'نص عادي',
+  EMPTY: 'لا توجد ملاحظات',
+  LOADING: 'جاري التحميل...',
+  PLACEHOLDER: 'أدخل الملاحظة هنا...',
+  ERRORS: {
+    REQUIRED: 'يرجى إدخال الملاحظة',
+    MAX_LENGTH: 'الملاحظة يجب ألا تتجاوز 4088 حرفاً',
+  },
+  DELETE_CONFIRM: {
+    TITLE: 'تأكيد الحذف',
+    MESSAGE: 'هل أنت متأكد من حذف هذه الملاحظة؟',
+    CANCEL: 'إلغاء',
+    DELETE: 'حذف',
+  },
+}
+
+// Presentation & Test tab
+export const PRESENTATION_TEST_TAB_LABELS = {
+  TITLE: 'العرض والاختبار',
+  ADD_RECORD: 'إضافة سجل',
+  TRACK: 'المسار',
+  LEVEL: 'المرحلة / المستوى المعروض',
+  DATE: 'تاريخ العرض',
+  SCORE_PRESENTATION: 'درجة العرض (50/50)',
+  SCORE_TEST: 'درجة الاختبار (50/50)',
+  ACTIONS: 'إجراء',
+  EMPTY: 'لا توجد سجلات عرض واختبار',
+  LOADING: 'جاري التحميل...',
+  DELETE_CONFIRM: {
+    TITLE: 'تأكيد الحذف',
+    MESSAGE: 'هل أنت متأكد من حذف سجل العرض والاختبار؟',
+    CANCEL: 'إلغاء',
+    DELETE: 'حذف',
+  },
+}
+
+// Add Presentation Test Dialog
+export const ADD_PRESENTATION_TEST_LABELS = {
+  TITLE: 'إضافة سجل عرض واختبار',
+  SCORE_PRESENTATION: 'درجة العرض (50/50)',
+  SCORE_TEST: 'درجة الاختبار (50/50)',
+  PLACEHOLDERS: {
+    SCORE_PRESENTATION: '0 - 50',
+    SCORE_TEST: '0 - 50',
+  },
+  SUBMIT: 'حفظ',
+  CANCEL: 'إلغاء',
+  SUBMITTING: 'جاري الحفظ...',
+  ERRORS: {
+    SCORE_PRESENTATION_REQUIRED: 'يرجى إدخال درجة العرض',
+    SCORE_TEST_REQUIRED: 'يرجى إدخال درجة الاختبار',
+    SCORE_RANGE: 'الدرجة يجب أن تكون بين 0 و 50',
+  },
+}
+
+// Program track badge colors (الذهبي=golden, الفضي=silver, etc.)
+export const TRACK_BADGE_COLORS: Record<string, { background: string; text: string }> = {
+  ذهبي: { background: '#FFFBEB', text: '#F59E0B' },
+  الذهبي: { background: '#FFFBEB', text: '#F59E0B' },
+  فضي: { background: '#EFF6FF', text: '#3B82F6' },
+  الفضي: { background: '#EFF6FF', text: '#3B82F6' },
+  إتقان: { background: '#ECFDF5', text: '#10B981' },
+  حفظ: { background: '#F3E8FF', text: '#8B5CF6' },
+}
+
+// Add Attendance Dialog
+export const ADD_ATTENDANCE_LABELS = {
+  TITLE: 'إضافة سجل حضور',
+  DATE: 'التاريخ',
+  SESSION: 'الجلسة',
+  STATUS: 'الحالة',
+  PAGE_NUMBER: 'آخر صفحة تم تسميعها',
+  SCORE: 'التقييم',
+  SESSION_OPTIONS: {
+    WEEKLY: 'تسميع أسبوعي',
+    PRESENTATION_TEST: 'عرض واختبار',
+  },
+  PLACEHOLDERS: {
+    DATE: 'حدد التاريخ',
+    SESSION: 'اختر نوع الجلسة',
+    STATUS: 'اختر الحالة',
+    PAGE_NUMBER: 'أدخل رقم الصفحة',
+    SCORE: 'أدخل التقييم (0-5)',
+  },
+  SUBMIT: 'حفظ',
+  CANCEL: 'إلغاء',
+  SUBMITTING: 'جاري الحفظ...',
+  ERRORS: {
+    DATE_REQUIRED: 'يرجى تحديد التاريخ',
+    SESSION_REQUIRED: 'يرجى اختيار نوع الجلسة',
+    STATUS_REQUIRED: 'يرجى اختيار الحالة',
+    SCORE_RANGE: 'التقييم يجب أن يكون بين 0 و 5',
+  },
+}
+
 // Attendance status configuration
 export const ATTENDANCE_STATUS_CONFIG = {
   [AttendanceStatus.PRESENT]: {

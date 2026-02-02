@@ -5,7 +5,7 @@ import { useValidation, rules } from '@/composables/useValidation'
 import { BaseInput, BaseButton, BaseCheckbox, BaseDatePicker, BasePhoneInput } from '@/components/ui'
 import { IconArrowRight } from '@/components/icons'
 import bgVideoImage from '@/assets/img/bgVedio.png'
-import { apiRequest, ApiException } from '@/services/api'
+import { api, ApiException } from '@/services/api'
 import { translateErrorCode, translateErrorCodes } from '@/utils/errorTranslations'
 import {
   getLookups,
@@ -453,12 +453,8 @@ async function submitStudentRegistration() {
       program_id: getProgramId()
     }
     
-    const response = await apiRequest({
-      method: 'POST',
-      url: '/auth/register',
-      data: payload
-    })
-    
+    const response = await api.post('/auth/register', payload)
+
     if (response.success) {
       showSuccessModal.value = true
     }
@@ -518,11 +514,7 @@ async function submitTeacherRegistration() {
       volunteer: teacherStep2Form.volunteer === 'yes' ? 1 : 0
     }
     
-    const response = await apiRequest({
-      method: 'POST',
-      url: '/auth/register',
-      data: payload
-    })
+    const response = await api.post('/auth/register', payload)
     
     if (response.success) {
       showSuccessModal.value = true

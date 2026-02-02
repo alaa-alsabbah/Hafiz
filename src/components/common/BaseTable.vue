@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import AppLoading from './AppLoading.vue'
 
 interface Column {
   key: string
@@ -85,7 +86,7 @@ function handlePageSizeChange(event: Event) {
 <template>
   <div class="base-table">
     <div v-if="loading" class="base-table__loading">
-      {{ loadingMessage }}
+      <AppLoading :full-screen="false" size="sm" :text="loadingMessage" />
     </div>
     <div v-else-if="data.length === 0" class="base-table__empty">
       {{ emptyMessage }}
@@ -185,7 +186,13 @@ function handlePageSizeChange(event: Event) {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 
-  &__loading,
+  &__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+  }
+
   &__empty {
     text-align: center;
     padding: $spacing-8;

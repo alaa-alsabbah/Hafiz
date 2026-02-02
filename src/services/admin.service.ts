@@ -1,6 +1,5 @@
 // Admin API service
-import { apiRequest } from './api'
-import type { ApiResponse } from './api'
+import { api, type ApiResponse } from './api'
 
 // Admin API endpoints
 const ADMIN_API_ENDPOINTS = {
@@ -22,8 +21,5 @@ export interface AdminDashboard {
  * Get admin dashboard data
  */
 export async function getAdminDashboard(): Promise<ApiResponse<AdminDashboard>> {
-  return apiRequest<AdminDashboard>({
-    method: 'GET',
-    url: ADMIN_API_ENDPOINTS.DASHBOARD,
-  })
+  return api.get<AdminDashboard>(ADMIN_API_ENDPOINTS.DASHBOARD)
 }

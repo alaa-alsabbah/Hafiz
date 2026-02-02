@@ -43,15 +43,29 @@ export interface ApiResponse<T = any> {
   validator?: Record<string, string[]>
 }
 
-/**
- * Make API request with automatic token handling
- */
-export async function apiRequest<T = any>(options: {
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+/** HTTP methods supported by the API */
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+
+/** Options for apiRequest */
+export interface ApiRequestOptions {
+  method: HttpMethod
   url: string
   data?: any
   headers?: Record<string, string>
-}): Promise<ApiResponse<T>> {
+}
+
+/**
+ * Build full API URL
+ */
+function buildUrl(url: string): string {
+  return `${API_BASE_URL}/${API_VERSION}${url}`
+}
+
+/**
+ * Make API request with automatic token handling
+ * Use api.get(), api.post(), etc. for cleaner calls
+ */
+export async function apiRequest<T = any>(options: ApiRequestOptions): Promise<ApiResponse<T>> {
   const { method, url, data, headers = {} } = options
 
   // Get token
@@ -65,8 +79,10 @@ export async function apiRequest<T = any>(options: {
     headers['Content-Type'] = 'application/json'
   }
 
+  const fullUrl = buildUrl(url)
+
   try {
-    const response = await fetch(`${API_BASE_URL}/${API_VERSION}${url}`, {
+    const response = await fetch(fullUrl, {
       method,
       headers,
       body: data instanceof FormData ? data : data ? JSON.stringify(data) : undefined,
@@ -97,15 +113,39 @@ export async function apiRequest<T = any>(options: {
 }
 
 /**
+ * API client - best practice shorthand methods for HTTP requests
+ */
+export const api = {
+  get<T = any>(url: string, params?: Record<string, string>): Promise<ApiResponse<T>> {
+    const fullUrl = params && Object.keys(params).length > 0
+      ? `${url}${url.includes('?') ? '&' : '?'}${new URLSearchParams(params).toString()}`
+      : url
+    return apiRequest<T>({ method: 'GET', url: fullUrl })
+  },
+
+  post<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
+    return apiRequest<T>({ method: 'POST', url, data })
+  },
+
+  put<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
+    return apiRequest<T>({ method: 'PUT', url, data })
+  },
+
+  patch<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
+    return apiRequest<T>({ method: 'PATCH', url, data })
+  },
+
+  delete<T = any>(url: string): Promise<ApiResponse<T>> {
+    return apiRequest<T>({ method: 'DELETE', url })
+  },
+}
+
+/**
  * POST FormData (for file uploads)
  */
 export async function postFormData<T = any>(
   url: string,
   formData: FormData
 ): Promise<ApiResponse<T>> {
-  return apiRequest<T>({
-    method: 'POST',
-    url,
-    data: formData,
-  })
+  return api.post<T>(url, formData)
 }

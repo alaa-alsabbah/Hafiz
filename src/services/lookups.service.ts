@@ -14,6 +14,7 @@ export const LOOKUP_GROUPS = {
   MASTERY_PERCENTAGE: 'mastery_percentage',
   EXPERIENCE_YEARS: 'experience_years',
   MEMORIZED_QURAN_COMPLETELY: 'memorized_quran_completely',
+  ATTENDANCE_STATUS: 'attendance_status',
 } as const
 
 export type LookupGroup = typeof LOOKUP_GROUPS[keyof typeof LOOKUP_GROUPS]

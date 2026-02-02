@@ -1,5 +1,5 @@
 // Auth API service
-import { apiRequest, type ApiResponse } from './api'
+import { api } from './api'
 import type { User, LoginCredentials } from '@/types'
 
 // Auth API endpoints
@@ -29,13 +29,9 @@ export interface LoginResult {
 export async function loginRequest(
   credentials: LoginCredentials
 ): Promise<LoginResult> {
-  const response: ApiResponse<LoginResponseData> = await apiRequest<LoginResponseData>({
-    method: 'POST',
-    url: AUTH_API_ENDPOINTS.LOGIN,
-    data: {
-      email: credentials.email,
-      password: credentials.password,
-    },
+  const response = await api.post<LoginResponseData>(AUTH_API_ENDPOINTS.LOGIN, {
+    email: credentials.email,
+    password: credentials.password,
   })
 
   if (!response.success || !response.data) {
