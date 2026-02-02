@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { getStudentById, type Student } from '@/services/teacher.service'
-import { BaseButton, BaseTabs } from '@/components/ui'
+import { BaseTabs } from '@/components/ui'
 import AppLoading from '@/components/common/AppLoading.vue'
 import {
   STUDENT_PROFILE_LABELS,
@@ -31,8 +31,8 @@ const tabs = [
 ]
 
 const statusStyle = computed(() => {
-  const status = student.value?.status || 'غير معين'
-  return STUDENT_STATUS_COLORS[status] || STUDENT_STATUS_COLORS['غير معين']
+  const status = student.value?.status || 'نشط'
+  return STUDENT_STATUS_COLORS[status] || STUDENT_STATUS_COLORS['نشط']
 })
 
 const initials = computed(() => {
@@ -61,7 +61,7 @@ async function fetchStudent() {
   try {
     const res = await getStudentById(props.studentId)
     if (res.success && res.data) {
-      student.value = { ...res.data, status: res.data.status || 'غير معين' }
+      student.value = { ...res.data, status: res.data.status || 'نشط' }
     } else {
       error.value = res.message || 'فشل تحميل بيانات الطالب'
     }
@@ -100,41 +100,46 @@ function handleCopy() {
   navigator.clipboard.writeText(text).catch(() => {})
 }
 
-const overviewRows = computed(() => {
+const L = STUDENT_PROFILE_LABELS.OVERVIEW
+
+// Right column (first in RTL): Country, Education, How heard, Email, Quran parts, Watched video, Interview time, Level, Teacher
+const overviewRightCol = computed(() => {
   const s = student.value
-  if (!s) return {}
-  const L = STUDENT_PROFILE_LABELS.OVERVIEW
-  return {
-    [L.COUNTRY]: formatValue(s.country),
-    [L.EDUCATION_LEVEL]: formatValue(s.education_level),
-    [L.HOW_DID_YOU_KNOW]: formatValue(s.how_did_you_know_us),
-    [L.EMAIL]: formatValue(s.email),
-    [L.QURAN_LEVEL]: formatValue(s.quran_memorization_level),
-    [L.WATCHED_VIDEO]: formatValue(s.watched_intro_video),
-    [L.INTERVIEW_TIME]: formatValue(s.interview_time_preference),
-    [L.CURRENT_LEVEL]: formatValue(s.level),
-    [L.TEACHER]: formatValue(s.teacher),
-    [L.GENDER]: formatValue(s.gender),
-    [L.AGE]: formatValue(s.age),
-    [L.PHONE]: formatValue(s.phone_number),
-    [L.RESIDENCE]: formatValue(s.residence),
-    [L.HAS_IJAZA]: formatValue(s.has_ijaza_id),
-    [L.PROGRAM_TRACK]: formatValue(s.program_track),
-    [L.PROGRAM]: formatValue(s.program),
-    [L.START_DATE]: formatValue(s.created_at),
-  }
+  if (!s) return []
+  return [
+    [L.COUNTRY, formatValue(s.country)],
+    [L.EDUCATION_LEVEL, formatValue(s.education_level)],
+    [L.HOW_DID_YOU_KNOW, formatValue(s.how_did_you_know_us)],
+    [L.EMAIL, formatValue(s.email)],
+    [L.QURAN_LEVEL, formatValue(s.quran_memorization_level)],
+    [L.WATCHED_VIDEO, formatValue(s.watched_intro_video)],
+    [L.INTERVIEW_TIME, formatValue(s.interview_time_preference)],
+    [L.CURRENT_LEVEL, formatValue(s.level)],
+    [L.TEACHER, formatValue(s.teacher)],
+  ]
 })
 
-const overviewLeft = computed(() => {
-  const entries = Object.entries(overviewRows.value)
-  const mid = Math.ceil(entries.length / 2)
-  return entries.slice(0, mid)
+// Left column: Gender, Age, Profession, Phone, Residence, Ijaza, Track, Program, Start date
+const overviewLeftCol = computed(() => {
+  const s = student.value
+  if (!s) return []
+  return [
+    [L.GENDER, formatValue(s.gender)],
+    [L.AGE, formatValue(s.age)],
+    [L.PROFESSION, formatValue(s.profession)],
+    [L.PHONE, formatValue(s.phone_number)],
+    [L.RESIDENCE, formatValue(s.residence)],
+    [L.HAS_IJAZA, formatValue(s.has_ijaza_id)],
+    [L.PROGRAM_TRACK, formatValue(s.program_track)],
+    [L.PROGRAM, formatValue(s.program)],
+    [L.START_DATE, formatValue(s.created_at)],
+  ]
 })
 
-const overviewRight = computed(() => {
-  const entries = Object.entries(overviewRows.value)
-  const mid = Math.ceil(entries.length / 2)
-  return entries.slice(mid)
+const overviewRows = computed(() => {
+  const right = Object.fromEntries(overviewRightCol.value)
+  const left = Object.fromEntries(overviewLeftCol.value)
+  return { ...right, ...left }
 })
 
 watch(
@@ -158,49 +163,17 @@ watch(
         @click="handleOverlayClick"
       >
         <aside class="student-profile-drawer__panel">
-          <!-- Header bar: Close + Title (or loading/error) + actions - always visible, gray bg -->
-          <div class="student-profile-drawer__header">
-            <button
-              type="button"
-              class="student-profile-drawer__close"
-              aria-label="إغلاق"
-              @click="close"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
-            <template v-if="loading">
-              <span class="student-profile-drawer__title student-profile-drawer__title--muted">جاري التحميل...</span>
-            </template>
-            <template v-else-if="error">
-              <span class="student-profile-drawer__title student-profile-drawer__title--error">{{ error }}</span>
-            </template>
-            <template v-else-if="student">
-              <h2 class="student-profile-drawer__title">{{ student.full_name }}</h2>
-              <button
-                type="button"
-                class="student-profile-drawer__action-btn"
-                @click="sendWhatsApp"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                </svg>
-                {{ STUDENT_PROFILE_LABELS.ACTIONS.SEND_WHATSAPP }}
-              </button>
-              <button
-                type="button"
-                class="student-profile-drawer__action-btn"
-                @click="sendEmail"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
-                </svg>
-                {{ STUDENT_PROFILE_LABELS.ACTIONS.SEND_EMAIL }}
-              </button>
-            </template>
-          </div>
+          <!-- Close button - top right corner -->
+          <button
+            type="button"
+            class="student-profile-drawer__close"
+            aria-label="إغلاق"
+            @click="close"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
 
           <template v-if="loading">
             <div class="student-profile-drawer__loading">
@@ -213,16 +186,45 @@ watch(
           </template>
 
           <template v-else-if="student">
-            <div class="student-profile-drawer__student-info">
-              <div class="student-profile-drawer__avatar">{{ initials }}</div>
-              <div class="student-profile-drawer__meta">
-                <p class="student-profile-drawer__level">{{ student.level }}</p>
-                <span
-                  class="student-profile-drawer__status"
-                  :style="{ backgroundColor: statusStyle.bg, color: statusStyle.text }"
+            <!-- Header: Avatar + Name + Level + Status + Action buttons -->
+            <div class="student-profile-drawer__header">
+              <div class="student-profile-drawer__header-main">
+                <div class="student-profile-drawer__avatar">{{ initials }}</div>
+                <div class="student-profile-drawer__header-info">
+                  <div class="student-profile-drawer__header-name-row">
+                    <h2 class="student-profile-drawer__name">{{ student.full_name }}</h2>
+                    <span
+                      class="student-profile-drawer__status"
+                      :style="{ backgroundColor: statusStyle.bg, color: statusStyle.text }"
+                    >
+                      {{ student.status || STUDENT_PROFILE_LABELS.STATUS_ACTIVE }}
+                    </span>
+                  </div>
+                  <p class="student-profile-drawer__level">{{ student.level }}</p>
+                </div>
+              </div>
+              <div class="student-profile-drawer__action-buttons">
+                <button
+                  type="button"
+                  class="student-profile-drawer__action-btn"
+                  @click="sendWhatsApp"
                 >
-                  {{ student.status || STUDENT_PROFILE_LABELS.STATUS_ACTIVE }}
-                </span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
+                  {{ STUDENT_PROFILE_LABELS.ACTIONS.SEND_WHATSAPP }}
+                </button>
+                <button
+                  type="button"
+                  class="student-profile-drawer__action-btn"
+                  @click="sendEmail"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
+                  </svg>
+                  {{ STUDENT_PROFILE_LABELS.ACTIONS.SEND_EMAIL }}
+                </button>
               </div>
             </div>
 
@@ -234,14 +236,14 @@ watch(
             <!-- Content -->
             <div class="student-profile-drawer__content">
               <div v-if="activeTab === 'overview'" class="student-profile-drawer__overview">
-                <h3 class="student-profile-drawer__overview-title">
+                <!-- <h3 class="student-profile-drawer__overview-title">
                   {{ STUDENT_PROFILE_LABELS.OVERVIEW.TITLE }}
-                </h3>
+                </h3> -->
                 <div class="student-profile-drawer__overview-grid">
                   <div class="student-profile-drawer__overview-col">
                     <div
-                      v-for="[label, value] in overviewRight"
-                      :key="label"
+                      v-for="[label, value] in overviewRightCol"
+                      :key="String(label)"
                       class="student-profile-drawer__row"
                     >
                       <span class="student-profile-drawer__label">{{ label }}</span>
@@ -250,8 +252,8 @@ watch(
                   </div>
                   <div class="student-profile-drawer__overview-col">
                     <div
-                      v-for="[label, value] in overviewLeft"
-                      :key="label"
+                      v-for="[label, value] in overviewLeftCol"
+                      :key="String(label)"
                       class="student-profile-drawer__row"
                     >
                       <span class="student-profile-drawer__label">{{ label }}</span>
@@ -271,22 +273,22 @@ watch(
               </div>
             </div>
 
-            <!-- Footer -->
+            <!-- Footer: Copy (secondary) + Export (primary) -->
             <div class="student-profile-drawer__footer">
-              <BaseButton variant="primary" size="sm" @click="handleExport">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                {{ STUDENT_PROFILE_LABELS.ACTIONS.EXPORT }}
-              </BaseButton>
               <button type="button" class="student-profile-drawer__copy-btn" @click="handleCopy">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
                 {{ STUDENT_PROFILE_LABELS.ACTIONS.COPY }}
+              </button>
+              <button type="button" class="student-profile-drawer__export-btn" @click="handleExport">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                {{ STUDENT_PROFILE_LABELS.ACTIONS.EXPORT }}
               </button>
             </div>
           </template>
@@ -304,16 +306,16 @@ watch(
   backdrop-filter: blur(2px);
   z-index: 1000;
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
   align-items: stretch;
-  direction: ltr; /* Panel opens from left */
+  direction: rtl;
 }
 
 .student-profile-drawer__panel {
   width: 100%;
   max-width: 640px;
   background: #fff;
-  box-shadow: $shadow-lg;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -327,17 +329,10 @@ watch(
   }
 }
 
-.student-profile-drawer__header {
-  display: flex;
-  align-items: center;
-  gap: $spacing-3;
-  padding: $spacing-4 $spacing-6;
-  background-color: #E5E6E6;
-  flex-shrink: 0;
-  direction: ltr; /* Close + Title + WhatsApp + Email from left to right */
-}
-
 .student-profile-drawer__close {
+  position: absolute;
+  top: $spacing-4;
+  right: $spacing-4;
   width: 36px;
   height: 36px;
   display: flex;
@@ -349,30 +344,11 @@ watch(
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: all $transition-fast;
-  flex-shrink: 0;
+  z-index: 10;
 
   &:hover {
     background: rgba(0, 0, 0, 0.08);
     color: var(--color-text-primary);
-  }
-}
-
-.student-profile-drawer__title {
-  font-size: $font-size-xl;
-  font-weight: $font-weight-bold;
-  color: var(--color-text-primary);
-  margin: 0;
-  flex: 1;
-  min-width: 0;
-
-  &--muted {
-    color: var(--color-text-secondary);
-    font-weight: $font-weight-medium;
-  }
-
-  &--error {
-    color: var(--color-error);
-    font-size: $font-size-sm;
   }
 }
 
@@ -390,17 +366,25 @@ watch(
   text-align: center;
 }
 
-.student-profile-drawer__student-info {
+.student-profile-drawer__header {
+  padding: $spacing-6 $spacing-6 $spacing-4;
+  padding-top: $spacing-12;
+  background: #fff;
+  flex-shrink: 0;
+  border-bottom: none;
+}
+
+.student-profile-drawer__header-main {
   display: flex;
   align-items: flex-start;
   gap: $spacing-4;
-  padding: $spacing-4 $spacing-6;
-  border-bottom: 1px solid var(--color-border);
+  margin-bottom: $spacing-4;
 }
 
 .student-profile-drawer__avatar {
   width: 56px;
   height: 56px;
+  min-width: 56px;
   border-radius: 50%;
   background: linear-gradient(135deg, #009968 0%, #136047 100%);
   color: #fff;
@@ -409,18 +393,33 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
 
-.student-profile-drawer__meta {
+.student-profile-drawer__header-info {
   flex: 1;
   min-width: 0;
+}
+
+.student-profile-drawer__header-name-row {
+  display: flex;
+  align-items: center;
+  gap: $spacing-3;
+  flex-wrap: wrap;
+  margin-bottom: $spacing-1;
+  justify-content: space-between;
+}
+
+.student-profile-drawer__name {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: var(--color-text-primary);
+  margin: 0;
 }
 
 .student-profile-drawer__level {
   font-size: $font-size-sm;
   color: var(--color-text-secondary);
-  margin: 0 0 $spacing-2 0;
+  margin: 0;
 }
 
 .student-profile-drawer__status {
@@ -431,6 +430,13 @@ watch(
   font-weight: $font-weight-medium;
 }
 
+.student-profile-drawer__action-buttons {
+  display: flex;
+  gap: $spacing-3;
+  flex-wrap: wrap;
+  justify-content: end;
+}
+
 .student-profile-drawer__action-btn {
   display: inline-flex;
   align-items: center;
@@ -438,30 +444,54 @@ watch(
   padding: $spacing-2 $spacing-4;
   border: 1px solid var(--color-border);
   border-radius: $radius-lg;
-  background: #fff;
+  background: #f9fafb;
   color: var(--color-text-primary);
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   cursor: pointer;
   transition: all $transition-fast;
-  flex-shrink: 0;
 
   &:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-    background: var(--color-primary-lighter);
+    border-color: $color-primary;
+    color: $color-primary;
+    background: $color-primary-lighter;
+  }
+
+  svg {
+    flex-shrink: 0;
   }
 }
 
 .student-profile-drawer__tabs {
-  padding: $spacing-4 $spacing-6 0;
+  padding: 0;
   flex-shrink: 0;
+
+  :deep(.base-tabs) {
+    background: #f3f4f6;
+    padding: 4px;
+    border-radius: $radius-lg;
+    min-width: 0;
+
+    .base-tabs__tab {
+      background: #f3f4f6;
+      color: var(--color-text-secondary);
+
+      &--active {
+        background: linear-gradient(90deg, #009968 0%, #136047 100%);
+        color: #fff;
+      }
+
+      &:not(.base-tabs__tab--active):hover {
+        background: #d1d5db;
+      }
+    }
+  }
 }
 
 .student-profile-drawer__content {
   flex: 1;
   overflow-y: auto;
-  padding: $spacing-6;
+  padding: $spacing-4;
   min-height: 200px;
 }
 
@@ -486,7 +516,7 @@ watch(
 .student-profile-drawer__overview-col {
   display: flex;
   flex-direction: column;
-  gap: $spacing-3;
+  gap: $spacing-4;
 }
 
 .student-profile-drawer__row {
@@ -498,12 +528,13 @@ watch(
 .student-profile-drawer__label {
   font-size: $font-size-sm;
   font-weight: $font-weight-bold;
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
 }
 
 .student-profile-drawer__value {
   font-size: $font-size-sm;
   color: var(--color-text-primary);
+  padding-right: 0;
 }
 
 .student-profile-drawer__placeholder {
@@ -525,8 +556,9 @@ watch(
 .student-profile-drawer__copy-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: $spacing-2;
-  padding: $spacing-2 $spacing-4;
+  padding: $spacing-3 $spacing-5;
   border: 1px solid var(--color-border);
   border-radius: $radius-lg;
   background: #fff;
@@ -535,10 +567,42 @@ watch(
   font-weight: $font-weight-medium;
   cursor: pointer;
   transition: all $transition-fast;
+  flex: 1;
 
   &:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+    border-color: $color-primary;
+    color: $color-primary;
+    background: $color-primary-lighter;
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.student-profile-drawer__export-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-2;
+  padding: $spacing-3 $spacing-5;
+  border: none;
+  border-radius: $radius-lg;
+  background: linear-gradient(90deg, #009968 0%, #136047 100%);
+  color: #fff;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+  flex: 1;
+
+  &:hover {
+    opacity: 0.95;
+    filter: brightness(1.05);
+  }
+
+  svg {
+    flex-shrink: 0;
   }
 }
 
@@ -559,6 +623,6 @@ watch(
 
 .drawer-enter-from .student-profile-drawer__panel,
 .drawer-leave-to .student-profile-drawer__panel {
-  transform: translateX(-100%);
+  transform: translateX(100%);
 }
 </style>

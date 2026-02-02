@@ -214,6 +214,7 @@ export const STUDENT_PROFILE_LABELS = {
     TEACHER: 'المعلم المعين',
     GENDER: 'الجنس',
     AGE: 'العمر',
+    PROFESSION: 'المهنة',
     PHONE: 'رقم الهاتف على واتساب',
     RESIDENCE: 'مكان الإقامة',
     HAS_IJAZA: 'رخصة أو شهادة في القرآن الكريم',
@@ -227,6 +228,7 @@ export const STUDENT_PROFILE_LABELS = {
 
 // Status badge colors for student table
 export const STUDENT_STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  نشط: { bg: 'rgba(232, 245, 233, 1)', text: '#1b5e20' },
   مكتمل: { bg: 'rgba(232, 245, 233, 1)', text: '#1b5e20' },
   'عرض واختبار': { bg: 'rgba(255, 243, 224, 1)', text: '#e65100' },
   انسحب: { bg: 'rgba(255, 235, 238, 1)', text: '#c62828' },

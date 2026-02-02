@@ -17,6 +17,7 @@ export interface Student {
   country: string | null
   gender: string | null
   age: string
+  profession?: string | null
   education_level: string | null
   how_did_you_know_us: string | null
   phone_number: string
