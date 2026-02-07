@@ -1,39 +1,29 @@
 <script setup lang="ts">
-
+import { ADMIN_LABELS } from '@/config/admin.constants'
 </script>
 
 <template>
-  <div class="admin-dashboard" data-component="AdminDashboardView">
+  <div class="admin-weekly-report" data-component="AdminWeeklyReportView">
+    <div class="admin-weekly-report__header">
+      <h1 class="admin-weekly-report__title">
+        {{ ADMIN_LABELS.WEEKLY_REPORT }}
+      </h1>
+    </div>
 
-    <!-- Dashboard Content -->
-    <div class="admin-dashboard__content">
-      <p>لوحة تحكم المسؤول - قيد التطوير</p>
+    <div class="admin-weekly-report__content">
+      <p>التقرير الأسبوعي - قيد التطوير</p>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.admin-dashboard {
+.admin-weekly-report {
   width: 100%;
   min-height: 100vh;
   position: relative;
 
-  &__top-section {
+  &__header {
     margin-bottom: $spacing-4;
-  }
-
-  &__top-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $spacing-4;
-  }
-
-  &__notifications {
-    display: flex;
-    align-items: center;
   }
 
   &__title {

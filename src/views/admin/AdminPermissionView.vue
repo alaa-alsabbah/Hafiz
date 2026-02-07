@@ -1,39 +1,29 @@
 <script setup lang="ts">
-
+import { ADMIN_LABELS } from '@/config/admin.constants'
 </script>
 
 <template>
-  <div class="admin-dashboard" data-component="AdminDashboardView">
+  <div class="admin-permission" data-component="AdminPermissionView">
+    <div class="admin-permission__header">
+      <h1 class="admin-permission__title">
+        {{ ADMIN_LABELS.PERMISSION }}
+      </h1>
+    </div>
 
-    <!-- Dashboard Content -->
-    <div class="admin-dashboard__content">
-      <p>لوحة تحكم المسؤول - قيد التطوير</p>
+    <div class="admin-permission__content">
+      <p>الاستئذان - قيد التطوير</p>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.admin-dashboard {
+.admin-permission {
   width: 100%;
   min-height: 100vh;
   position: relative;
 
-  &__top-section {
+  &__header {
     margin-bottom: $spacing-4;
-  }
-
-  &__top-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $spacing-4;
-  }
-
-  &__notifications {
-    display: flex;
-    align-items: center;
   }
 
   &__title {

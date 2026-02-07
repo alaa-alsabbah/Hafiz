@@ -1,39 +1,29 @@
 <script setup lang="ts">
-
+import { ADMIN_LABELS } from '@/config/admin.constants'
 </script>
 
 <template>
-  <div class="admin-dashboard" data-component="AdminDashboardView">
+  <div class="admin-evaluations" data-component="AdminInterviewAssessmentsView">
+    <div class="admin-evaluations__header">
+      <h1 class="admin-evaluations__title">
+        {{ ADMIN_LABELS.EVALUATIONS }}
+      </h1>
+    </div>
 
-    <!-- Dashboard Content -->
-    <div class="admin-dashboard__content">
-      <p>لوحة تحكم المسؤول - قيد التطوير</p>
+    <div class="admin-evaluations__content">
+      <p>تقييمات المقابلات - قيد التطوير</p>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.admin-dashboard {
+.admin-evaluations {
   width: 100%;
   min-height: 100vh;
   position: relative;
 
-  &__top-section {
+  &__header {
     margin-bottom: $spacing-4;
-  }
-
-  &__top-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $spacing-4;
-  }
-
-  &__notifications {
-    display: flex;
-    align-items: center;
   }
 
   &__title {

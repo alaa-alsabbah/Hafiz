@@ -47,7 +47,7 @@ function selectTab(tab: TabItem) {
 <style lang="scss" scoped>
 .base-tabs {
   display: inline-flex;
-  background: rgba(255, 255, 255, 0.9);
+  background:rgba(244, 244, 244, 1);
   border-radius: $radius-lg;
   padding: 4px;
   box-shadow: $shadow-sm;

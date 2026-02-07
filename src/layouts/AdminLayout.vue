@@ -11,8 +11,15 @@ import {
   IconGraduationCap,
   IconLogout,
   IconArrowLeft,
+  IconChevronUp,
+  IconChevronDown,
 } from '@/components/icons'
-import { ADMIN_MENU_ITEMS, ADMIN_LABELS } from '@/config/admin.constants'
+import {
+  ADMIN_MENU_ITEMS,
+  ADMIN_LABELS,
+  isParent,
+  type AdminMenuEntry,
+} from '@/config/admin.constants'
 
 // Import SVG icons
 import gridIcon from '@/assets/img/icons/SquaresFour.svg'
@@ -22,6 +29,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const isSidebarOpen = ref(false)
+const expandedParents = ref<Set<string>>(new Set())
 
 const currentUser = computed(() => authStore.currentUser)
 
@@ -44,13 +52,61 @@ const menuItems = computed(() =>
   })
 )
 
+// Expand parent when a child route is active
+watch(
+  () => route.name,
+  (name) => {
+    if (!name) return
+    const nameStr = String(name)
+    for (const item of ADMIN_MENU_ITEMS) {
+      if (isParent(item) && item.children.some((c) => c.name === nameStr)) {
+        expandedParents.value = new Set([...expandedParents.value, item.name])
+        break
+      }
+    }
+  },
+  { immediate: true }
+)
+
+const pageTitle = computed(() => {
+  const name = route.name ? String(route.name) : ''
+  const findInItems = (items: AdminMenuEntry[]): string | null => {
+    for (const item of items) {
+      if (item.name === name) return item.label
+      if (isParent(item) && item.children) {
+        for (const child of item.children) {
+          if (child.name === name) return child.label
+        }
+      }
+    }
+    return null
+  }
+  return findInItems(ADMIN_MENU_ITEMS) || ADMIN_LABELS.PAGE_TITLE
+})
+
 const isActiveRoute = (routeName: string) => {
   return route.name === routeName
 }
 
+const isParentActive = (item: AdminMenuEntry) => {
+  if (!isParent(item)) return false
+  return item.children.some((c) => c.name === route.name)
+}
+
+const isParentExpanded = (parentName: string) => expandedParents.value.has(parentName)
+
+function toggleParent(parentName: string) {
+  const next = new Set(expandedParents.value)
+  if (next.has(parentName)) {
+    next.delete(parentName)
+  } else {
+    next.add(parentName)
+  }
+  expandedParents.value = next
+}
+
 function navigateTo(routeName: string) {
   router.push({ name: routeName })
-  // Close sidebar on mobile after navigation
   if (window.innerWidth < 768) {
     isSidebarOpen.value = false
   }
@@ -69,8 +125,6 @@ function handleLogout() {
   router.push({ name: 'login' })
 }
 
-
-// Prevent body scroll when sidebar is open on mobile
 watch(isSidebarOpen, (isOpen) => {
   if (window.innerWidth < 768) {
     if (isOpen) {
@@ -81,7 +135,6 @@ watch(isSidebarOpen, (isOpen) => {
   }
 })
 
-// Cleanup on unmount
 onUnmounted(() => {
   document.body.style.overflow = ''
 })
@@ -89,7 +142,6 @@ onUnmounted(() => {
 
 <template>
   <div class="admin-layout" :class="{ 'admin-layout--sidebar-open': isSidebarOpen }">
-    <!-- Overlay -->
     <Transition name="overlay">
       <div
         v-if="isSidebarOpen"
@@ -98,7 +150,6 @@ onUnmounted(() => {
       />
     </Transition>
 
-    <!-- Sidebar -->
     <aside class="admin-layout__sidebar">
       <div class="admin-layout__sidebar-header">
         <AppLogo size="md" />
@@ -112,31 +163,88 @@ onUnmounted(() => {
       </div>
 
       <nav class="admin-layout__nav">
-        <button
-          v-for="item in menuItems"
-          :key="item.name"
-          class="admin-layout__nav-item"
-          :class="{ 'admin-layout__nav-item--active': isActiveRoute(item.name) }"
-          @click="navigateTo(item.name)"
-        >
-          <img
-            v-if="item.isSvg"
-            :src="item.icon"
-            :alt="item.label"
-            class="admin-layout__nav-icon"
-          />
-          <component
-            v-else
-            :is="item.icon"
-            class="admin-layout__nav-icon"
-          />
-          <span class="admin-layout__nav-label">
-            {{ item.label }}
-          </span>
-        </button>
+        <template v-for="item in menuItems" :key="item.name">
+          <!-- Standalone item: لوحة التحكم, تقييمات المقابلات, المعلمين -->
+          <button
+            v-if="!isParent(item)"
+            class="admin-layout__nav-item"
+            :class="{ 'admin-layout__nav-item--active': isActiveRoute(item.name) }"
+            @click="navigateTo(item.name)"
+          >
+            <img
+              v-if="item.isSvg"
+              :src="item.icon"
+              :alt="item.label"
+              class="admin-layout__nav-icon"
+            />
+            <component
+              v-else
+              :is="item.icon"
+              class="admin-layout__nav-icon"
+            />
+            <span class="admin-layout__nav-label">
+              {{ item.label }}
+            </span>
+          </button>
+
+          <!-- Parent الطلاب with children directly below (التقرير الأسبوعي, العرض والاختبار, الاستئذان) -->
+          <div v-else class="admin-layout__nav-parent">
+            <button
+              class="admin-layout__nav-item admin-layout__nav-item--parent"
+              :class="{ 'admin-layout__nav-item--active': isParentActive(item) }"
+              @click="toggleParent(item.name)"
+            >
+              <img
+                v-if="item.isSvg"
+                :src="item.icon"
+                :alt="item.label"
+                class="admin-layout__nav-icon"
+              />
+              <component
+                v-else
+                :is="item.icon"
+                class="admin-layout__nav-icon"
+              />
+              <span class="admin-layout__nav-label">
+                {{ item.label }}
+              </span>
+              <span class="admin-layout__nav-chevron">
+                <IconChevronDown
+                  v-if="!isParentExpanded(item.name)"
+                  class="admin-layout__chevron-icon"
+                />
+                <IconChevronUp
+                  v-else
+                  class="admin-layout__chevron-icon"
+                />
+              </span>
+            </button>
+            <Transition name="expand">
+              <div
+                v-if="isParentExpanded(item.name)"
+                class="admin-layout__nav-children"
+              >
+                <button
+                  v-for="child in item.children"
+                  :key="child.name"
+                  class="admin-layout__nav-item admin-layout__nav-item--child"
+                  :class="{ 'admin-layout__nav-item--active': isActiveRoute(child.name) }"
+                  @click="navigateTo(child.name)"
+                >
+                  <component
+                    :is="iconMap[child.icon]"
+                    class="admin-layout__nav-icon"
+                  />
+                  <span class="admin-layout__nav-label">
+                    {{ child.label }}
+                  </span>
+                </button>
+              </div>
+            </Transition>
+          </div>
+        </template>
       </nav>
 
-      <!-- User Profile at Bottom -->
       <div class="admin-layout__user-profile">
         <div class="admin-layout__user-avatar">
           <span>
@@ -152,12 +260,11 @@ onUnmounted(() => {
       </div>
     </aside>
 
-    <!-- Main area -->
     <div class="admin-layout__main">
       <header class="admin-layout__header">
         <div class="admin-layout__header-content">
           <h1 class="admin-layout__header-title">
-            {{ ADMIN_LABELS.PAGE_TITLE }}
+            {{ pageTitle }}
           </h1>
 
           <div class="admin-layout__header-left">
@@ -177,7 +284,6 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-        <div class="admin-layout__header-line"></div>
       </header>
 
       <main class="admin-layout__content">
@@ -288,6 +394,19 @@ onUnmounted(() => {
     flex: 1;
   }
 
+  &__nav-parent {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+  }
+
+  &__nav-children {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+    padding-right: $spacing-8;
+  }
+
   &__nav-item {
     display: flex;
     align-items: center;
@@ -312,10 +431,19 @@ onUnmounted(() => {
       background-color: var(--color-primary);
       color: #fff;
       box-shadow: $shadow-sm;
-      
+
       .admin-layout__nav-icon {
         filter: brightness(0) invert(1);
       }
+    }
+
+    &--parent {
+      justify-content: flex-start;
+      cursor: pointer;
+    }
+
+    &--child {
+      padding-right: $spacing-8;
     }
   }
 
@@ -329,6 +457,18 @@ onUnmounted(() => {
 
   &__nav-label {
     flex: 1;
+  }
+
+  &__nav-chevron {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__chevron-icon {
+    width: 16px;
+    height: 16px;
   }
 
   &__user-profile {
@@ -389,17 +529,24 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    padding-top: $spacing-4;
+
+    @include sm-max {
+      padding-top: 0;
+    }
   }
 
   &__header {
-    background-color: #fff;
+    background-color: transparent;
     position: sticky;
     top: 0;
     z-index: var(--sidebar-z-index);
     border-bottom: none;
+    margin-top: -$spacing-4;
 
     @include sm-max {
       z-index: 100;
+      margin-top: 0;
     }
   }
 
@@ -412,10 +559,11 @@ onUnmounted(() => {
     background-color: #fff;
     border-top-right-radius: $radius-2xl;
     direction: rtl;
+    gap: $spacing-4;
+    flex-wrap: wrap;
 
     @include sm-max {
       padding: $spacing-3 $spacing-4;
-      flex-wrap: wrap;
       gap: $spacing-2;
     }
   }
@@ -425,12 +573,24 @@ onUnmounted(() => {
     align-items: center;
     gap: $spacing-3;
     direction: ltr;
+    flex-wrap: wrap;
+
+    @include sm-max {
+      gap: $spacing-2;
+      width: 100%;
+      order: 2;
+    }
   }
 
   &__header-actions {
     display: flex;
     align-items: center;
     gap: $spacing-2;
+    flex-wrap: wrap;
+
+    @include sm-max {
+      gap: $spacing-1;
+    }
   }
 
   &__header-title {
@@ -439,13 +599,17 @@ onUnmounted(() => {
     color: var(--color-text-primary);
     margin: 0;
     text-align: right;
+    flex: 1;
+    min-width: 0;
+
+    @include sm-max {
+      font-size: $font-size-xl;
+      order: 1;
+      width: 100%;
+      margin-bottom: $spacing-2;
+    }
   }
 
-  &__header-line {
-    height: 3px;
-    background-color: var(--color-primary);
-    width: 100%;
-  }
 
   &__toggle {
     display: none;
@@ -468,23 +632,21 @@ onUnmounted(() => {
     border-radius: $radius-full;
   }
 
-
   &__content {
     flex: 1;
     padding: $spacing-6;
-    background-color: var(--color-background);
+    background-color: $color-background-card;
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
 
     @include sm-max {
       padding: $spacing-4 $spacing-3;
+      background-color: #F8FFFB;
     }
   }
-
 }
 
-// Overlay transitions
 .overlay-enter-active,
 .overlay-leave-active {
   transition: opacity $transition-normal;
@@ -493,5 +655,23 @@ onUnmounted(() => {
 .overlay-enter-from,
 .overlay-leave-to {
   opacity: 0;
+}
+
+.expand-enter-active,
+.expand-leave-active {
+  transition: all $transition-fast ease-out;
+  overflow: hidden;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
+
+.expand-enter-to,
+.expand-leave-from {
+  opacity: 1;
+  max-height: 200px;
 }
 </style>

@@ -169,6 +169,53 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/teacher/TeacherDashboardView.vue'), // placeholder
     meta: { requiresAuth: true, requiresRole: 'teacher', layout: 'teacher' }
   },
+  // Admin routes (uses AdminLayout)
+  {
+    path: '/admin',
+    redirect: '/admin/dashboard'
+  },
+  {
+    path: '/admin/dashboard',
+    name: 'admin-dashboard',
+    component: () => import('@/views/admin/AdminDashboardView.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin', layout: 'admin' }
+  },
+  {
+    path: '/admin/students',
+    name: 'admin-students',
+    component: () => import('@/views/admin/AdminStudentsView.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin', layout: 'admin' }
+  },
+  {
+    path: '/admin/evaluations',
+    name: 'admin-evaluations',
+    component: () => import('@/views/admin/AdminInterviewAssessmentsView.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin', layout: 'admin' }
+  },
+  {
+    path: '/admin/teachers',
+    name: 'admin-teachers',
+    component: () => import('@/views/admin/AdminTeachersView.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin', layout: 'admin' }
+  },
+  {
+    path: '/admin/weekly-report',
+    name: 'admin-weekly-report',
+    component: () => import('@/views/admin/AdminWeeklyReportView.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin', layout: 'admin' }
+  },
+  {
+    path: '/admin/presentation-test',
+    name: 'admin-presentation-test',
+    component: () => import('@/views/admin/AdminPresentationTestView.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin', layout: 'admin' }
+  },
+  {
+    path: '/admin/permission',
+    name: 'admin-permission',
+    component: () => import('@/views/admin/AdminPermissionView.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin', layout: 'admin' }
+  },
   {
     path: '/:pathMatch(.*)*',
     redirect: '/login'
