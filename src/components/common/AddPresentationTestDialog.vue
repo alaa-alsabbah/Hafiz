@@ -49,7 +49,7 @@ function handleOverlayClick(event: MouseEvent) {
   }
 }
 
-function validateScore(value: string, fieldName: string): number | null {
+function validateScore(value: string, _fieldName: string): number | null {
   if (value === '' || value === null || value === undefined) {
     return null
   }
