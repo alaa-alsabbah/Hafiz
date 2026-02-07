@@ -19,6 +19,9 @@ withDefaults(defineProps<Props>(), {
 
 <template>
   <div class="stat-card" :class="`stat-card--${index}`">
+    <div v-if="$slots.icon" class="stat-card__icon">
+      <slot name="icon" />
+    </div>
     <div class="stat-card__content">
       <div class="stat-card__value">
         <span v-if="loading" class="stat-card__skeleton">---</span>
@@ -50,6 +53,10 @@ withDefaults(defineProps<Props>(), {
   flex-direction: column;
   justify-content: space-between;
   min-height: 140px;
+
+  &__icon {
+    margin-bottom: var(--spacing-3);
+  }
 
   &__content {
     flex: 1;

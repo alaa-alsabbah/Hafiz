@@ -1,5 +1,7 @@
 // API service with token management and error handling
 import { API_BASE_URL, API_VERSION } from '@/config/api'
+import { refreshTokenRequest } from '@/services/auth.service'
+import { AUTH_API_ENDPOINTS } from '@/services/auth.service'
 
 // API Exception class
 export class ApiException extends Error {
@@ -27,7 +29,20 @@ export const tokenManager = {
   },
   remove(): void {
     localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+  },
+  setRefreshToken(token: string): void {
+    localStorage.setItem('refresh_token', token)
+  },
+  getRefreshToken(): string | null {
+    return localStorage.getItem('refresh_token')
   }
+}
+
+/** Callback when refresh fails - triggers logout. Set by auth store on init. */
+let onRefreshFailure: (() => void) | null = null
+export function setRefreshFailureCallback(cb: () => void): void {
+  onRefreshFailure = cb
 }
 
 // API Response types
@@ -61,15 +76,44 @@ function buildUrl(url: string): string {
   return `${API_BASE_URL}/${API_VERSION}${url}`
 }
 
+/** Pending refresh promise - ensures only one refresh at a time */
+let refreshPromise: Promise<string> | null = null
+
+/** Check if request is to auth endpoints that should skip refresh retry */
+function isAuthEndpoint(url: string): boolean {
+  return url.includes(AUTH_API_ENDPOINTS.LOGIN) || url.includes(AUTH_API_ENDPOINTS.REFRESH_TOKEN)
+}
+
 /**
- * Make API request with automatic token handling
- * Use api.get(), api.post(), etc. for cleaner calls
+ * Attempt token refresh and return new access token.
+ * Serializes concurrent refresh attempts.
+ */
+async function tryRefreshToken(): Promise<string> {
+  if (refreshPromise) {
+    return refreshPromise
+  }
+
+  refreshPromise = refreshTokenRequest()
+    .then((res) => {
+      tokenManager.set(res.access_token)
+      return res.access_token
+    })
+    .finally(() => {
+      refreshPromise = null
+    })
+
+  return refreshPromise
+}
+
+/**
+ * Make API request with automatic token handling and 401 refresh retry.
+ * Use api.get(), api.post(), etc. for cleaner calls.
  */
 export async function apiRequest<T = any>(options: ApiRequestOptions): Promise<ApiResponse<T>> {
   const { method, url, data, headers = {} } = options
 
   // Get token
-  const token = tokenManager.get()
+  let token = tokenManager.get()
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
@@ -81,12 +125,34 @@ export async function apiRequest<T = any>(options: ApiRequestOptions): Promise<A
 
   const fullUrl = buildUrl(url)
 
-  try {
-    const response = await fetch(fullUrl, {
+  const doRequest = (authHeader?: string) => {
+    const h = { ...headers }
+    if (authHeader) {
+      h['Authorization'] = `Bearer ${authHeader}`
+    }
+    return fetch(fullUrl, {
       method,
-      headers,
+      headers: h,
       body: data instanceof FormData ? data : data ? JSON.stringify(data) : undefined,
     })
+  }
+
+  try {
+    let response = await doRequest()
+
+    // On 401: try refresh and retry once (skip for login/refresh endpoints)
+    if (response.status === 401 && !isAuthEndpoint(url) && (token || tokenManager.getRefreshToken())) {
+      try {
+        const newToken = await tryRefreshToken()
+        response = await doRequest(newToken)
+      } catch (refreshErr) {
+        onRefreshFailure?.()
+        throw new ApiException(
+          refreshErr instanceof Error ? refreshErr.message : 'انتهت جلستك، يرجى تسجيل الدخول مرة أخرى',
+          401
+        )
+      }
+    }
 
     // Parse response
     const responseData = await response.json()

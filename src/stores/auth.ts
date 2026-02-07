@@ -52,6 +52,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Persist token and user for all API calls and router guards
       tokenManager.set(result.token)
+      if (result.refreshToken) {
+        tokenManager.setRefreshToken(result.refreshToken)
+      }
       saveUserToStorage(result.user)
       
       if (credentials.rememberMe) {

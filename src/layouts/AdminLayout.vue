@@ -261,7 +261,8 @@ onUnmounted(() => {
     </aside>
 
     <div class="admin-layout__main">
-      <header class="admin-layout__header">
+      <!-- Desktop header -->
+      <header class="admin-layout__header admin-layout__header--desktop">
         <div class="admin-layout__header-content">
           <h1 class="admin-layout__header-title">
             {{ pageTitle }}
@@ -283,6 +284,33 @@ onUnmounted(() => {
               <NotificationBell :count="3" :has-notification="true" />
             </div>
           </div>
+        </div>
+      </header>
+
+      <!-- Mobile header (hamburger | logo | notification) -->
+      <header class="admin-layout__header admin-layout__header--mobile">
+        <div class="admin-layout__mobile-top-bar">
+          <div class="admin-layout__mobile-top-left">
+            <button
+              class="admin-layout__mobile-toggle"
+              type="button"
+              aria-label="Toggle sidebar"
+              @click="toggleSidebar"
+            >
+              <span class="admin-layout__toggle-line" />
+              <span class="admin-layout__toggle-line" />
+              <span class="admin-layout__toggle-line" />
+            </button>
+          </div>
+          <div class="admin-layout__mobile-top-center">
+            <AppLogo size="md" />
+          </div>
+          <div class="admin-layout__mobile-top-right">
+            <NotificationBell :count="3" :has-notification="true" />
+          </div>
+        </div>
+        <div class="admin-layout__mobile-content-row">
+          <h1 class="admin-layout__mobile-title">{{ pageTitle }}</h1>
         </div>
       </header>
 
@@ -312,12 +340,11 @@ onUnmounted(() => {
     right: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: calc(var(--sidebar-z-index) - 1);
+    z-index: 999;
     backdrop-filter: blur(2px);
 
-    @include sm-max {
+    @include md-max {
       display: block;
-      z-index: 999;
     }
   }
 
@@ -334,7 +361,7 @@ onUnmounted(() => {
     z-index: var(--sidebar-z-index);
     transition: transform $transition-normal ease-in-out;
 
-    @include sm-max {
+    @include md-max {
       position: fixed;
       top: 0;
       right: 0;
@@ -342,11 +369,12 @@ onUnmounted(() => {
       transform: translateX(100%);
       box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
       will-change: transform;
+      z-index: 1000;
     }
   }
 
   &--sidebar-open {
-    @include sm-max {
+    @include md-max {
       .admin-layout__sidebar {
         transform: translateX(0) !important;
       }
@@ -375,7 +403,7 @@ onUnmounted(() => {
       color: var(--color-primary);
     }
 
-    @include sm-max {
+    @include md-max {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -531,8 +559,9 @@ onUnmounted(() => {
     min-width: 0;
     padding-top: $spacing-4;
 
-    @include sm-max {
+    @include md-max {
       padding-top: 0;
+      background-color: #F8FFFB;
     }
   }
 
@@ -544,10 +573,89 @@ onUnmounted(() => {
     border-bottom: none;
     margin-top: -$spacing-4;
 
-    @include sm-max {
+    @include md-max {
       z-index: 100;
       margin-top: 0;
+      padding-top: 0;
     }
+
+    &--desktop {
+      @include md-max {
+        display: none;
+      }
+    }
+
+    &--mobile {
+      display: none;
+      flex-direction: column;
+      background-color: #F8FFFB;
+      padding: $spacing-3 $spacing-4;
+      gap: $spacing-4;
+      border-radius: 0;
+      margin-top: 0;
+
+      @include md-max {
+        display: flex;
+      }
+    }
+  }
+
+  &__mobile-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  &__mobile-top-left {
+    flex: 1;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  &__mobile-top-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  &__mobile-top-right {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+
+    :deep(.notification-bell) {
+      background-color: rgba(236, 253, 245, 1);
+      border: 1px solid rgba(27, 122, 78, 0.2);
+    }
+  }
+
+  &__mobile-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: $spacing-2;
+    cursor: pointer;
+    color: var(--color-text-primary);
+  }
+
+  &__mobile-content-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: $spacing-3;
+  }
+
+  &__mobile-title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: var(--color-text-primary);
+    margin: 0;
+    text-align: right;
+    flex: 1;
   }
 
   &__header-content {
@@ -562,7 +670,7 @@ onUnmounted(() => {
     gap: $spacing-4;
     flex-wrap: wrap;
 
-    @include sm-max {
+    @include md-max {
       padding: $spacing-3 $spacing-4;
       gap: $spacing-2;
     }
@@ -575,7 +683,7 @@ onUnmounted(() => {
     direction: ltr;
     flex-wrap: wrap;
 
-    @include sm-max {
+    @include md-max {
       gap: $spacing-2;
       width: 100%;
       order: 2;
@@ -588,7 +696,7 @@ onUnmounted(() => {
     gap: $spacing-2;
     flex-wrap: wrap;
 
-    @include sm-max {
+    @include md-max {
       gap: $spacing-1;
     }
   }
@@ -602,7 +710,7 @@ onUnmounted(() => {
     flex: 1;
     min-width: 0;
 
-    @include sm-max {
+    @include md-max {
       font-size: $font-size-xl;
       order: 1;
       width: 100%;
@@ -618,7 +726,7 @@ onUnmounted(() => {
     padding: $spacing-2;
     cursor: pointer;
 
-    @include sm-max {
+    @include md-max {
       display: inline-flex;
       flex-direction: column;
       gap: 4px;
@@ -640,7 +748,7 @@ onUnmounted(() => {
     max-width: 100%;
     overflow-x: hidden;
 
-    @include sm-max {
+    @include md-max {
       padding: $spacing-4 $spacing-3;
       background-color: #F8FFFB;
     }
