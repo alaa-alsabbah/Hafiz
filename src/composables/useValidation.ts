@@ -20,7 +20,7 @@ export function useValidation<T extends Record<string, string>>(
   })
 
   function validateField(field: string): boolean {
-    const value = form[field as keyof T] as string
+    const value = (form as Record<string, string>)[field]
     const fieldRules = rules[field]
     
     if (!fieldRules) {
