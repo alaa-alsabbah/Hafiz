@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { BaseTable, AppLoading } from '@/components/common'
 import { BaseDropdown } from '@/components/ui'
 import {
@@ -11,6 +11,20 @@ import {
   ADMIN_DASHBOARD_LABELS,
   AdminStatCardType,
 } from '@/config/admin.constants'
+import {
+  Chart,
+  ArcElement,
+  DoughnutController,
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Filler,
+  Legend,
+  Tooltip,
+  type ChartConfiguration,
+} from 'chart.js'
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -81,11 +95,11 @@ const hefazLevelsWithPercent = computed(() => {
     levels.full + levels.more_20 + levels.from_10_to_20 + levels.from_5_to_9 + levels.less_5
   if (total === 0) return []
   return [
-    { key: 'full', percent: Math.round((levels.full / total) * 100), label: ADMIN_DASHBOARD_LABELS.HEFAZ_LEVELS.FULL, color: '#059669' },
-    { key: 'more_20', percent: Math.round((levels.more_20 / total) * 100), label: ADMIN_DASHBOARD_LABELS.HEFAZ_LEVELS.MORE_20, color: '#34D399' },
-    { key: 'from_10_to_20', percent: Math.round((levels.from_10_to_20 / total) * 100), label: ADMIN_DASHBOARD_LABELS.HEFAZ_LEVELS.FROM_10_TO_20, color: '#6EE7B7' },
-    { key: 'from_5_to_9', percent: Math.round((levels.from_5_to_9 / total) * 100), label: ADMIN_DASHBOARD_LABELS.HEFAZ_LEVELS.FROM_5_TO_9, color: '#9CA3AF' },
-    { key: 'less_5', percent: Math.round((levels.less_5 / total) * 100), label: ADMIN_DASHBOARD_LABELS.HEFAZ_LEVELS.LESS_5, color: '#6B7280' },
+    { key: 'full', percent: Math.round((levels.full / total) * 100), label: ADMIN_DASHBOARD_LABELS.HEFAZ_LEVELS.FULL, color: '#009968' },
+    { key: 'more_20', percent: Math.round((levels.more_20 / total) * 100), label: ADMIN_DASHBOARD_LABELS.HEFAZ_LEVELS.MORE_20, color: '#BBF49C' },
+    { key: 'from_10_to_20', percent: Math.round((levels.from_10_to_20 / total) * 100), label: ADMIN_DASHBOARD_LABELS.HEFAZ_LEVELS.FROM_10_TO_20, color: '#DBFFC8' },
+    { key: 'from_5_to_9', percent: Math.round((levels.from_5_to_9 / total) * 100), label: ADMIN_DASHBOARD_LABELS.HEFAZ_LEVELS.FROM_5_TO_9, color: '#ECF4E9' },
+    { key: 'less_5', percent: Math.round((levels.less_5 / total) * 100), label: ADMIN_DASHBOARD_LABELS.HEFAZ_LEVELS.LESS_5, color: '#EBEBEB' },
   ]
 })
 
@@ -95,84 +109,169 @@ const totalStudentsForChart = computed(() => {
   return levels.full + levels.more_20 + levels.from_10_to_20 + levels.from_5_to_9 + levels.less_5
 })
 
-const hefazConicGradient = computed(() => {
-  const levels = hefazLevelsWithPercent.value
-  if (levels.length === 0) return '#E5E7EB'
-  let prev = 0
-  const parts = levels.map((l) => {
-    const start = prev
-    prev += l.percent
-    return `${l.color} ${start}% ${prev}%`
-  })
-  return `conic-gradient(${parts.join(', ')})`
-})
+// Chart.js: register required components and center-text plugin
+Chart.register(
+  ArcElement,
+  DoughnutController,
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Filler,
+  Legend,
+  Tooltip
+)
 
-const maxMonthlyValue = computed(() => {
-  const arr = monthlyData.value
-  if (arr.length === 0) return 1
-  const max = Math.max(...arr.map((m) => m.total), 1)
-  return Math.ceil(max / 1500) * 1500 || 1500
-})
-
-const chartHoverIndex = ref<number | null>(null)
-
-const chartPoints = computed(() => {
-  const arr = monthlyData.value
-  const max = maxMonthlyValue.value
-  const pad = { top: 25, right: 20, bottom: 35, left: 50 }
-  const w = 400
-  const h = 200
-  const chartW = w - pad.left - pad.right
-  const chartH = h - pad.top - pad.bottom
-  if (arr.length === 0) return { line: '', area: '', points: [] }
-  const points = arr.map((m, i) => {
-    const x = pad.left + (i / Math.max(arr.length - 1, 1)) * chartW
-    const y = pad.top + chartH - (m.total / max) * chartH
-    return { x, y, ...m, index: i }
-  })
-  const smoothPath = createSmoothPath(points.map((p) => [p.x, p.y]))
-  const bottomY = pad.top + chartH
-  const areaPath = `${smoothPath} L ${points[points.length - 1].x} ${bottomY} L ${points[0].x} ${bottomY} Z`
-  return { line: smoothPath, area: areaPath, points }
-})
-
-function createSmoothPath(pts: number[][]): string {
-  if (pts.length === 0) return ''
-  if (pts.length === 1) return `M ${pts[0][0]} ${pts[0][1]}`
-  const toStr = (x: number, y: number) => `${x} ${y}`
-  let d = `M ${toStr(pts[0][0], pts[0][1])}`
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[Math.max(0, i - 1)]
-    const p1 = pts[i]
-    const p2 = pts[i + 1]
-    const p3 = pts[Math.min(pts.length - 1, i + 2)]
-    const cp1x = p1[0] + (p2[0] - p0[0]) / 6
-    const cp1y = p1[1] + (p2[1] - p0[1]) / 6
-    const cp2x = p2[0] - (p3[0] - p1[0]) / 6
-    const cp2y = p2[1] - (p3[1] - p1[1]) / 6
-    d += ` C ${toStr(cp1x, cp1y)} ${toStr(cp2x, cp2y)} ${toStr(p2[0], p2[1])}`
+function createCenterTextPlugin(label: string, getValue: () => number) {
+  return {
+    id: 'centerText',
+    beforeDraw(chart: Chart) {
+      if (chart.getDatasetMeta(0).data.length === 0) return
+      const ctx = chart.ctx
+      const centerX = (chart.chartArea.left + chart.chartArea.right) / 2
+      const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2
+      ctx.save()
+      ctx.font = '12px sans-serif'
+      ctx.fillStyle = '#6B7280'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(label, centerX, centerY - 10)
+      ctx.font = 'bold 24px sans-serif'
+      ctx.fillStyle = '#009968'
+      ctx.fillText(String(getValue()), centerX, centerY + 8)
+      ctx.restore()
+    },
   }
-  return d
 }
 
-const yAxisLabels = computed(() => {
-  const max = maxMonthlyValue.value
-  let step = 1
-  if (max > 1000) step = 1500
-  else if (max > 100) step = Math.ceil(max / 4 / 100) * 100
-  else if (max > 10) step = 25
-  else if (max > 1) step = 2
-  const labels: string[] = []
-  for (let v = 0; v <= max; v += step) {
-    labels.push(v >= 1000 ? `${v / 1000}K` : String(v))
+const hefazCanvasRef = ref<HTMLCanvasElement | null>(null)
+let hefazChartInstance: Chart<'doughnut'> | null = null
+
+function buildHefazChart() {
+  const canvas = hefazCanvasRef.value
+  if (!canvas) return
+  const levels = hefazLevelsWithPercent.value
+  if (hefazChartInstance) {
+    hefazChartInstance.data.labels = levels.map((l) => l.label)
+    hefazChartInstance.data.datasets[0].data = levels.map((l) => l.percent)
+    hefazChartInstance.data.datasets[0].backgroundColor = levels.map((l) => l.color)
+    hefazChartInstance.update()
+    return
   }
-  return labels.length > 1 ? labels : ['0', String(max)]
-})
+  const config: ChartConfiguration<'doughnut'> = {
+    type: 'doughnut',
+    data: {
+      labels: levels.map((l) => l.label),
+      datasets: [{
+        data: levels.map((l) => l.percent),
+        backgroundColor: levels.map((l) => l.color),
+        borderWidth: 0,
+      }],
+    },
+    options: {
+      // Gauge style like design: arc from left over top to right, open at bottom (~270°)
+      rotation: 225,
+      circumference: 270,
+      cutout: '72%',
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 1.4,
+      layout: { padding: 6 },
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true },
+      },
+    },
+    plugins: [createCenterTextPlugin(ADMIN_DASHBOARD_LABELS.STUDENTS, () => totalStudentsForChart.value)],
+  }
+  hefazChartInstance = new Chart(canvas, config)
+}
+
+watch(
+  () => [hefazLevelsWithPercent.value, totalStudentsForChart.value],
+  () => {
+    if (hefazLevelsWithPercent.value.length > 0) nextTick(buildHefazChart)
+  },
+  { flush: 'post' }
+)
 
 const MONTH_SHORT: Record<string, string> = {
   يناير: 'Jan', فبراير: 'Feb', مارس: 'Mar', أبريل: 'Apr', مايو: 'May', يونيو: 'Jun',
   يوليو: 'Jul', أغسطس: 'Aug', سبتمبر: 'Sep', أكتوبر: 'Oct', نوفمبر: 'Nov', ديسمبر: 'Dec',
 }
+
+const monthlyCanvasRef = ref<HTMLCanvasElement | null>(null)
+let monthlyChartInstance: Chart<'line'> | null = null
+const PRIMARY_COLOR = '#1B7A4E'
+
+function buildMonthlyChart() {
+  const canvas = monthlyCanvasRef.value
+  if (!canvas) return
+  const data = monthlyData.value
+  const labels = data.map((m) => MONTH_SHORT[m.month] || m.month.slice(0, 3))
+  const values = data.map((m) => m.total)
+  if (monthlyChartInstance) {
+    monthlyChartInstance.data.labels = labels
+    monthlyChartInstance.data.datasets[0].data = values
+    monthlyChartInstance.update()
+    return
+  }
+  const config: ChartConfiguration<'line'> = {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: ADMIN_DASHBOARD_LABELS.MONTHLY_REGISTRATION,
+        data: values,
+        borderColor: PRIMARY_COLOR,
+        backgroundColor: PRIMARY_COLOR + '4D',
+        fill: true,
+        tension: 0.35,
+        pointBackgroundColor: PRIMARY_COLOR,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+        mode: 'index',
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label(ctx) {
+              const i = ctx.dataIndex
+              const m = data[i]
+              return m ? `${m.month}: ${m.total}` : `${ctx.parsed.y}`
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { maxRotation: 0 },
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: '#E5E7EB', lineWidth: 1 },
+        },
+      },
+    },
+  }
+  monthlyChartInstance = new Chart(canvas, config)
+}
+
+watch(
+  () => monthlyData.value,
+  () => nextTick(buildMonthlyChart),
+  { flush: 'post' }
+)
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/)
@@ -332,11 +431,9 @@ onMounted(() => {
         </div>
       </section>
 
-      <!-- Two-column layout: Chart on right (8 cols), Activity+Teachers on left (4 cols) -->
-      <div class="admin-dashboard__grid">
-        <!-- Right column (RTL): Monthly Chart + Memorization - 8/12 width -->
-        <div class="admin-dashboard__right admin-dashboard__right--chart">
-          <!-- Monthly Registration Chart (top right) -->
+      <!-- Row 1: التسجيل الشهري (8 cols) + النشاط الأخير (4 cols) – same row -->
+      <section class="admin-dashboard__row admin-dashboard__row--two-cols">
+        <div class="admin-dashboard__col-8">
           <div class="admin-dashboard__panel admin-dashboard__chart-panel">
             <div class="admin-dashboard__panel-header admin-dashboard__chart-header">
               <h3 class="admin-dashboard__panel-title">{{ ADMIN_DASHBOARD_LABELS.MONTHLY_REGISTRATION }}</h3>
@@ -346,130 +443,15 @@ onMounted(() => {
                 :placeholder="ADMIN_DASHBOARD_LABELS.YEAR_FILTER"
               />
             </div>
-            <div class="admin-dashboard__chart-wrapper">
-              <svg
-                v-if="monthlyData.length > 0"
-                class="admin-dashboard__line-chart"
-                viewBox="0 0 400 200"
-                preserveAspectRatio="none"
-              >
-                <defs>
-                  <linearGradient id="chartAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="var(--color-primary)" stop-opacity="0.3" />
-                    <stop offset="100%" stop-color="var(--color-primary)" stop-opacity="0" />
-                  </linearGradient>
-                </defs>
-                <!-- Grid lines -->
-                <g class="admin-dashboard__chart-grid">
-                  <line v-for="(_, i) in 5" :key="i" x1="50" :y1="25 + i * 32.5" x2="380" :y2="25 + i * 32.5" stroke="#E5E7EB" stroke-dasharray="4" stroke-width="1" />
-                </g>
-                <!-- Area fill -->
-                <path
-                  v-if="chartPoints.area"
-                  :d="chartPoints.area"
-                  fill="url(#chartAreaGradient)"
-                />
-                <!-- Line -->
-                <path
-                  v-if="chartPoints.line"
-                  :d="chartPoints.line"
-                  fill="none"
-                  stroke="var(--color-primary)"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <!-- Hover points & tooltip -->
-                <g v-for="(pt, idx) in chartPoints.points" :key="pt.month">
-                  <line
-                    v-if="chartHoverIndex === idx"
-                    :x1="pt.x"
-                    :y1="pt.y"
-                    :x2="pt.x"
-                    y2="165"
-                    class="admin-dashboard__chart-hover-line"
-                    stroke="#9CA3AF"
-                    stroke-dasharray="4"
-                    stroke-width="1"
-                  />
-                  <circle
-                    :cx="pt.x"
-                    :cy="pt.y"
-                    r="6"
-                    fill="var(--color-primary)"
-                    class="admin-dashboard__chart-point"
-                    @mouseenter="chartHoverIndex = idx"
-                    @mouseleave="chartHoverIndex = null"
-                  />
-                  <g v-if="chartHoverIndex === idx" class="admin-dashboard__chart-tooltip">
-                    <rect :x="pt.x - 45" :y="pt.y - 38" width="90" height="32" rx="4" fill="var(--color-primary)" />
-                    <text :x="pt.x" :y="pt.y - 18" text-anchor="middle" fill="#fff" font-size="11" font-weight="600">{{ pt.month }}</text>
-                    <text :x="pt.x" :y="pt.y - 6" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">{{ pt.total }}</text>
-                  </g>
-                </g>
-              </svg>
-              <!-- X-axis labels -->
-              <div v-if="monthlyData.length > 0" class="admin-dashboard__chart-x-labels">
-                <span
-                  v-for="m in monthlyData"
-                  :key="m.month"
-                  class="admin-dashboard__chart-x-label"
-                >
-                  {{ MONTH_SHORT[m.month] || m.month.slice(0, 3) }}
-                </span>
-              </div>
-              <!-- Y-axis labels -->
-              <div v-if="monthlyData.length > 0" class="admin-dashboard__chart-y-labels">
-                <span
-                  v-for="lbl in yAxisLabels"
-                  :key="lbl"
-                  class="admin-dashboard__chart-y-label"
-                >
-                  {{ lbl }}
-                </span>
-              </div>
+            <div class="admin-dashboard__chart-wrapper admin-dashboard__chart-wrapper--monthly">
+              <canvas v-if="monthlyData.length > 0" ref="monthlyCanvasRef" />
               <div v-if="monthlyData.length === 0" class="admin-dashboard__chart-empty">
                 لا توجد بيانات
               </div>
             </div>
           </div>
-
-          <!-- Memorization Level -->
-          <div class="admin-dashboard__panel">
-            <div class="admin-dashboard__panel-header">
-              <h3 class="admin-dashboard__panel-title">{{ ADMIN_DASHBOARD_LABELS.MEMORIZATION_LEVEL }}</h3>
-            </div>
-            <div class="admin-dashboard__hefaz">
-              <div class="admin-dashboard__hefaz-chart">
-                <div
-                  class="admin-dashboard__hefaz-arc"
-                  :style="{ background: hefazConicGradient }"
-                />
-                <div class="admin-dashboard__hefaz-center">
-                  <span class="admin-dashboard__hefaz-label">{{ ADMIN_DASHBOARD_LABELS.STUDENTS }}</span>
-                  <span class="admin-dashboard__hefaz-value">{{ totalStudentsForChart }}</span>
-                </div>
-              </div>
-              <div class="admin-dashboard__hefaz-legend">
-                <div
-                  v-for="level in hefazLevelsWithPercent"
-                  :key="level.key"
-                  class="admin-dashboard__hefaz-legend-item"
-                >
-                  <span class="admin-dashboard__hefaz-legend-color" :style="{ backgroundColor: level.color }" />
-                  <span class="admin-dashboard__hefaz-legend-text">{{ level.percent }}% {{ level.label }}</span>
-                </div>
-                <div v-if="hefazLevelsWithPercent.length === 0" class="admin-dashboard__hefaz-empty">
-                  لا توجد بيانات
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
-
-        <!-- Left column (RTL): Last Activity + Teachers Table - 4/12 width -->
-        <div class="admin-dashboard__left">
-          <!-- Last Activity (timeline design with day groups) -->
+        <div class="admin-dashboard__col-4">
           <div class="admin-dashboard__panel admin-dashboard__panel--activity">
             <div class="admin-dashboard__panel-header">
               <h3 class="admin-dashboard__panel-title">{{ ADMIN_DASHBOARD_LABELS.LAST_ACTIVITY }}</h3>
@@ -513,8 +495,38 @@ onMounted(() => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          <!-- Teachers Overview -->
+      <!-- Row 2: مستوى الحفظ (4 cols) + نظرة عامة على المعلمين (8 cols) – same row -->
+      <section class="admin-dashboard__row admin-dashboard__row--two-cols admin-dashboard__row--4-8">
+        <div class="admin-dashboard__col-4">
+          <div class="admin-dashboard__panel admin-dashboard__panel--hefaz">
+            <div class="admin-dashboard__panel-header admin-dashboard__hefaz-header">
+              <h3 class="admin-dashboard__panel-title">{{ ADMIN_DASHBOARD_LABELS.MEMORIZATION_LEVEL }}</h3>
+            </div>
+            <div class="admin-dashboard__hefaz">
+              <div class="admin-dashboard__hefaz-chart">
+                <canvas ref="hefazCanvasRef" />
+              </div>
+              <div class="admin-dashboard__hefaz-legend">
+                <div
+                  v-for="level in hefazLevelsWithPercent"
+                  :key="level.key"
+                  class="admin-dashboard__hefaz-legend-item"
+                >
+                  <span class="admin-dashboard__hefaz-legend-percent">{{ level.percent }}%</span>
+                  <span class="admin-dashboard__hefaz-legend-color" :style="{ backgroundColor: level.color }" />
+                  <span class="admin-dashboard__hefaz-legend-text">{{ level.label }}</span>
+                </div>
+                <div v-if="hefazLevelsWithPercent.length === 0" class="admin-dashboard__hefaz-empty">
+                  لا توجد بيانات
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="admin-dashboard__col-8">
           <div class="admin-dashboard__panel">
             <div class="admin-dashboard__panel-header">
               <h3 class="admin-dashboard__panel-title">{{ ADMIN_DASHBOARD_LABELS.TEACHERS_OVERVIEW }}</h3>
@@ -548,7 +560,7 @@ onMounted(() => {
             </BaseTable>
           </div>
         </div>
-      </div>
+      </section>
     </template>
   </div>
 </template>
@@ -685,40 +697,35 @@ onMounted(() => {
     font-weight: $font-weight-medium;
   }
 
-  &__grid {
+  &__row {
+    width: 100%;
+    margin-bottom: $spacing-6;
+
+    @include sm-max {
+      margin-bottom: $spacing-4;
+    }
+  }
+
+  /* Two-column rows: same row on md+ */
+  &__row--two-cols {
     display: grid;
     grid-template-columns: 1fr;
     gap: $spacing-6;
 
-    @include sm-max {
-      gap: $spacing-4;
-    }
-
-    @include md {
-      grid-template-columns: 1fr 340px;
+    @media (min-width: 768px) {
+      grid-template-columns: 2fr 1fr; /* Row 1: 8 (monthly) | 4 (activity) */
     }
   }
 
-  &__left {
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-6;
-    min-width: 0;
-  }
-
-  &__right {
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-6;
-    order: -1;
-    min-width: 0;
-
-    @include md {
-      order: 0;
+  /* Row 2: 4 (hefaz) | 8 (teachers) */
+  &__row--4-8 {
+    @media (min-width: 768px) {
+      grid-template-columns: 1fr 2fr;
     }
   }
 
-  &__right--chart {
+  &__col-4,
+  &__col-8 {
     min-width: 0;
   }
 
@@ -878,18 +885,18 @@ onMounted(() => {
 
   &__chart-panel {
     overflow: visible;
-    min-height: 340px;
+    min-height: 220px;
     display: flex;
     flex-direction: column;
 
     @include sm-max {
-      min-height: 280px;
+      min-height: 200px;
     }
   }
 
   &__panel--activity {
     min-height: 340px;
-
+    max-height: 465px;
     @include sm-max {
       min-height: 280px;
     }
@@ -909,23 +916,39 @@ onMounted(() => {
   &__chart-wrapper {
     position: relative;
     flex: 1;
-    min-height: 200px;
+    min-height: 140px;
     display: flex;
     flex-direction: column;
     width: 100%;
 
     @include sm-max {
-      min-height: 160px;
+      min-height: 120px;
+    }
+
+    &--monthly {
+      height: 200px;
+      min-height: 200px;
+
+      @include sm-max {
+        height: 180px;
+        min-height: 180px;
+      }
+
+      canvas {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+      }
     }
   }
 
   &__line-chart {
     width: 100%;
     flex: 1;
-    min-height: 160px;
+    min-height: 120px;
 
     @include sm-max {
-      min-height: 140px;
+      min-height: 100px;
     }
     display: block;
     cursor: default;
@@ -997,60 +1020,30 @@ onMounted(() => {
     color: var(--color-text-muted);
   }
 
+  &__panel--hefaz {
+    .admin-dashboard__panel-header {
+      margin-bottom: $spacing-2;
+    }
+  }
+
+
+
   &__hefaz {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: $spacing-6;
-    flex-wrap: wrap;
-
-    @include sm-max {
-      flex-direction: column;
-      gap: $spacing-4;
-    }
+    gap: $spacing-3;
   }
 
   &__hefaz-chart {
     position: relative;
-    width: 140px;
-    height: 140px;
-    flex-shrink: 0;
-  }
-
-  &__hefaz-arc {
     width: 100%;
-    height: 100%;
-    border-radius: 50%;
-  }
-
-  &__hefaz-center {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    background: var(--color-background-card);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 0 4px #fff;
-  }
-
-  &__hefaz-label {
-    font-size: $font-size-xs;
-    color: var(--color-text-secondary);
-  }
-
-  &__hefaz-value {
-    font-size: $font-size-2xl;
-    font-weight: $font-weight-bold;
-    color: var(--color-text-primary);
+    max-width: 200px;
+    margin: 0 auto;
   }
 
   &__hefaz-legend {
-    flex: 1;
+    width: 100%;
     display: flex;
     flex-direction: column;
     gap: $spacing-2;
@@ -1060,6 +1053,15 @@ onMounted(() => {
     display: flex;
     align-items: center;
     gap: $spacing-2;
+    flex-wrap: nowrap;
+  }
+
+  &__hefaz-legend-percent {
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    min-width: 2.5rem;
+    text-align: left;
   }
 
   &__hefaz-legend-color {
