@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import type { ApiResponse } from '@/services/api'
 import {
   getStudentById,
   getStudentAttendance,
@@ -35,6 +36,8 @@ import {
 interface Props {
   modelValue: boolean
   studentId: number | null
+  /** When provided (e.g. from admin), used instead of teacher getStudentById to fetch student */
+  getStudent?: (id: number) => Promise<ApiResponse<Student>>
 }
 
 const props = defineProps<Props>()
@@ -53,6 +56,12 @@ const tabs = [
   { id: 'notes', label: STUDENT_PROFILE_LABELS.TABS.NOTES, value: 'notes' },
   { id: 'test', label: STUDENT_PROFILE_LABELS.TABS.PRESENTATION_TEST, value: 'test' },
 ]
+
+/** When getStudent is provided (e.g. admin), show only overview tab and do not call teacher APIs */
+const overviewOnly = computed(() => !!props.getStudent)
+const visibleTabs = computed(() =>
+  overviewOnly.value ? [tabs[0]] : tabs
+)
 
 const statusStyle = computed(() => {
   const status = student.value?.status || 'نشط'
@@ -83,7 +92,8 @@ async function fetchStudent() {
   error.value = null
   student.value = null
   try {
-    const res = await getStudentById(props.studentId)
+    const fetcher = props.getStudent ?? getStudentById
+    const res = await fetcher(props.studentId)
     if (res.success && res.data) {
       student.value = { ...res.data, status: res.data.status || 'نشط' }
     } else {
@@ -399,6 +409,7 @@ async function confirmDeletePresentationTest() {
 }
 
 watch(activeTab, (tab) => {
+  if (overviewOnly.value) return
   if (tab === 'weekly' && props.studentId) {
     fetchAttendance()
   }
@@ -485,9 +496,9 @@ watch(activeTab, (tab) => {
               </div>
             </div>
 
-            <!-- Tabs -->
-            <div class="student-profile-drawer__tabs">
-              <BaseTabs v-model="activeTab" :tabs="tabs" />
+            <!-- Tabs (overview only when getStudent is provided, e.g. admin; hide tab bar when single tab) -->
+            <div v-if="visibleTabs.length > 1" class="student-profile-drawer__tabs">
+              <BaseTabs v-model="activeTab" :tabs="visibleTabs" />
             </div>
 
             <!-- Content -->

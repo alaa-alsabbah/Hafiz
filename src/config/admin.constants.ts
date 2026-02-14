@@ -57,12 +57,67 @@ export const ADMIN_LABELS = {
   PAGE_TITLE: 'لوحة التحكم',
   STUDENTS: 'الطلاب',
   STUDENTS_LIST: 'قائمة الطلاب',
+  STUDENTS_MANAGEMENT: 'إدارة الطلاب',
   WEEKLY_REPORT: 'التقرير الأسبوعي',
   PRESENTATION_TEST: 'العرض والاختبار',
   PERMISSION: 'الاستئذان',
   EVALUATIONS: 'تقييمات المقابلات',
   TEACHERS: 'المعلمون',
   LOGOUT: 'تسجيل الخروج',
+} as const
+
+// إدارة الطلاب page
+export const ADMIN_STUDENTS_PAGE = {
+  PAGE_TITLE: 'إدارة الطلاب',
+  SECTION_TITLE: 'نظرة عامة على جميع الطلاب',
+  STATS: {
+    TOTAL: { LABEL: 'إجمالي الطلاب', TAG: 'إجمالي', TAG_COLOR: ADMIN_TAG_COLORS.green },
+    ACTIVE: { LABEL: 'الطلاب النشطون', TAG: 'يتعلمون حالياً', TAG_COLOR: ADMIN_TAG_COLORS.blue },
+    HEFAZA: { LABEL: 'برنامج حفظة', TAG: 'الطلاب', TAG_COLOR: ADMIN_TAG_COLORS.green },
+    FURSAN: { LABEL: 'برنامج فرسان', TAG: 'الطلاب', TAG_COLOR: ADMIN_TAG_COLORS.green },
+  },
+  FILTERS: {
+    ALL: 'الكل',
+    HEFAZA: 'برنامج حفظة',
+    FURSAN: 'برنامج فرسان',
+    SEARCH_PLACEHOLDER: 'ابحث بالاسم أو البريد الإلكتروني...',
+    ALL_STATUSES: 'جميع الحالات',
+    SELECT_STUDENT: 'اختر طالبا محددا',
+    EXPORT: 'تصدير',
+  },
+  TABLE: {
+    STUDENT: 'طالب',
+    PROGRAM: 'البرنامج',
+    TRACK: 'المسار',
+    TEACHER: 'المعلم',
+    GROUP: 'المجموعة',
+    STATUS: 'حالة',
+    WARNINGS: 'عدد التنبيهات',
+    LEAVES: 'عدد الاستئذانات',
+    RATING: 'تقييم',
+    ACTIONS: 'إجراءات',
+  },
+  ACTIONS: {
+    VIEW: 'عرض الطالب',
+    ASSIGN: 'تعيين الطالب',
+    EDIT: 'تعديل الطالب',
+    EMAIL: 'إرسال بريد إلكتروني',
+    WHATSAPP: 'إرسال واتساب',
+    DELETE: 'حذف الطالب',
+  },
+  ASSIGN_DIALOG: {
+    TITLE: 'تعيين الطالب للمعلم',
+    SUBTITLE: 'اختر معلمًا لتعيين',
+    SUBTITLE_SUFFIX: 'له.',
+    CHOOSE_TEACHER: 'اختر معلما',
+    CURRENT_TEACHER: 'المعلم الحالي',
+    NO_CURRENT_TEACHER: 'غير معين',
+    ASSIGN_BTN: 'تعيين معلم',
+    CANCEL: 'إلغاء',
+    PROGRAM: 'برنامج',
+    SLOTS_AVAILABLE: 'أماكن متاحة',
+    STUDENTS_COUNT: 'طلاب',
+  },
 } as const
 
 // Admin menu item types for hierarchical sidemenu
@@ -100,6 +155,12 @@ export const ADMIN_MENU_ITEMS: AdminMenuEntry[] = [
     name: 'admin-students-parent',
     icon: 'graduation-cap',
     children: [
+      {
+        label: ADMIN_LABELS.STUDENTS_MANAGEMENT,
+        path: '/admin/students',
+        name: 'admin-students',
+        icon: 'user',
+      },
       {
         label: ADMIN_LABELS.WEEKLY_REPORT,
         path: '/admin/weekly-report',

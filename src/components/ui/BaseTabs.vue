@@ -47,17 +47,16 @@ function selectTab(tab: TabItem) {
 <style lang="scss" scoped>
 .base-tabs {
   display: inline-flex;
-  background:rgba(244, 244, 244, 1);
+  background: rgba(244, 244, 244, 1);
   border-radius: $radius-lg;
   padding: 4px;
   box-shadow: $shadow-sm;
   gap: 0;
-  min-width: 400px;
-  width: 100%;
+  min-width: 0;
+  width: auto;
   max-width: 100%;
 
   @include sm-max {
-    min-width: 0;
     width: 100%;
   }
 
@@ -94,7 +93,7 @@ function selectTab(tab: TabItem) {
     }
 
     &:not(&--active):hover {
-      background: var(--color-background);
+      background: rgba(229, 231, 235, 0.8);
     }
   }
 }

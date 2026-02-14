@@ -1,26 +1,400 @@
 <script setup lang="ts">
-import { ADMIN_LABELS } from '@/config/admin.constants'
+import { ref, computed, onMounted, watch } from 'vue'
+import { BaseTable, AppLoading, StudentProfileDrawer, AssignStudentDialog } from '@/components/common'
+import type { AssignStudentPayload } from '@/components/common/AssignStudentDialog.vue'
+import { ActionMenu, BaseTabs } from '@/components/ui'
+import type { ActionMenuItem } from '@/components/ui/ActionMenu.vue'
+import type { ApiResponse } from '@/services/api'
+import type { Student } from '@/services/teacher.service'
+import { getAdminStudents, getAdminStudent, type AdminStudent, type AdminStudentsData } from '@/services/admin.service'
+import { ADMIN_STUDENTS_PAGE } from '@/config/admin.constants'
+import { STUDENT_STATUS_COLORS } from '@/config/teacher.constants'
+
+const loading = ref(true)
+const error = ref<string | null>(null)
+const data = ref<AdminStudentsData | null>(null)
+
+const programFilter = ref<'all' | number>('all')
+const searchQuery = ref('')
+const statusFilter = ref('')
+const studentFilter = ref('')
+
+const showProfileDrawer = ref(false)
+const selectedStudentId = ref<number | null>(null)
+
+const showAssignDialog = ref(false)
+const assignStudent = ref<AssignStudentPayload | null>(null)
+
+async function fetchStudents() {
+  loading.value = true
+  error.value = null
+  try {
+    const programId = programFilter.value === 'all' ? undefined : (programFilter.value as number)
+    const response = await getAdminStudents(programId)
+    if (response.success && response.data) {
+      data.value = response.data
+    } else {
+      data.value = null
+    }
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'حدث خطأ في تحميل الطلاب'
+    data.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+const statCards = computed(() => {
+  const d = data.value
+  return [
+    {
+      key: 'total',
+      value: d?.full_counts ?? 0,
+      label: ADMIN_STUDENTS_PAGE.STATS.TOTAL.LABEL,
+      tag: ADMIN_STUDENTS_PAGE.STATS.TOTAL.TAG,
+      tagColor: ADMIN_STUDENTS_PAGE.STATS.TOTAL.TAG_COLOR,
+      iconBg: 'rgba(232, 245, 233, 1)',
+    },
+    {
+      key: 'active',
+      value: d?.active_count ?? 0,
+      label: ADMIN_STUDENTS_PAGE.STATS.ACTIVE.LABEL,
+      tag: ADMIN_STUDENTS_PAGE.STATS.ACTIVE.TAG,
+      tagColor: ADMIN_STUDENTS_PAGE.STATS.ACTIVE.TAG_COLOR,
+      iconBg: 'rgba(227, 242, 253, 1)',
+    },
+    {
+      key: 'hefaza',
+      value: d?.hafaza_count ?? 0,
+      label: ADMIN_STUDENTS_PAGE.STATS.HEFAZA.LABEL,
+      tag: ADMIN_STUDENTS_PAGE.STATS.HEFAZA.TAG,
+      tagColor: ADMIN_STUDENTS_PAGE.STATS.HEFAZA.TAG_COLOR,
+      iconBg: 'rgba(232, 245, 233, 1)',
+    },
+    {
+      key: 'fursan',
+      value: d?.fursan_count ?? 0,
+      label: ADMIN_STUDENTS_PAGE.STATS.FURSAN.LABEL,
+      tag: ADMIN_STUDENTS_PAGE.STATS.FURSAN.TAG,
+      tagColor: ADMIN_STUDENTS_PAGE.STATS.FURSAN.TAG_COLOR,
+      iconBg: 'rgba(232, 245, 233, 1)',
+    },
+  ]
+})
+
+const students = computed(() => data.value?.students ?? [])
+
+const filteredStudents = computed(() => {
+  let list = students.value
+  const q = searchQuery.value.trim().toLowerCase()
+  if (q) {
+    list = list.filter(
+      (s) =>
+        s.full_name?.toLowerCase().includes(q) ||
+        s.email?.toLowerCase().includes(q)
+    )
+  }
+  return list
+})
+
+function getStatusLabel(student: AdminStudent): string {
+  if (!student.teacher) return 'غير معين'
+  if (student.level) return student.level
+  return 'معلق'
+}
+
+function openStudentProfile(id: number) {
+  selectedStudentId.value = id
+  showProfileDrawer.value = true
+}
+
+function openAssignDialog(row: AdminStudent) {
+  assignStudent.value = {
+    id: row.id,
+    full_name: row.full_name,
+    level: row.level,
+    program: row.program,
+    teacher: row.teacher,
+  }
+  showAssignDialog.value = true
+}
+
+function onAssignSuccess() {
+  fetchStudents()
+}
+
+async function getStudentForDrawer(id: number): Promise<ApiResponse<Student>> {
+  const res = await getAdminStudent(id)
+  if (!res.success || !res.data) {
+    return { success: false, message: res.message ?? 'فشل تحميل بيانات الطالب' }
+  }
+  const d = res.data
+  const status = !d.teacher ? 'غير معين' : (d.level || 'معلق')
+  const student: Student = {
+    id: d.id,
+    full_name: d.full_name,
+    email: d.email,
+    country: d.country,
+    gender: d.gender,
+    age: d.age ?? '',
+    education_level: d.education_level,
+    how_did_you_know_us: d.how_did_you_know_us,
+    phone_number: d.phone_number ?? '',
+    residence: d.residence,
+    quran_memorization_level: d.quran_memorization_level,
+    has_ijaza_id: d.has_ijaza,
+    watched_intro_video: d.watched_intro_video,
+    interview_time_preference: d.interview_time_preference,
+    interview_date: d.interview_date,
+    score: d.score,
+    level: d.level ?? '',
+    program: d.program,
+    program_track: d.program_track,
+    teacher: d.teacher ?? '',
+    created_at: d.created_at,
+    status,
+  }
+  return { ...res, data: student }
+}
+
+function getStatusStyle(status: string): { backgroundColor: string; color: string } {
+  const colors = STUDENT_STATUS_COLORS[status] || STUDENT_STATUS_COLORS['غير معين']
+  return { backgroundColor: colors.bg, color: colors.text }
+}
+
+
+function getActionItems(row: AdminStudent): ActionMenuItem[] {
+  return [
+    { id: 'view', label: ADMIN_STUDENTS_PAGE.ACTIONS.VIEW, icon: 'eye', onClick: () => openStudentProfile(row.id) },
+    { id: 'assign', label: ADMIN_STUDENTS_PAGE.ACTIONS.ASSIGN, icon: 'user-plus', onClick: () => openAssignDialog(row) },
+    { id: 'edit', label: ADMIN_STUDENTS_PAGE.ACTIONS.EDIT, icon: 'custom', onClick: () => {} },
+    { id: 'email', label: ADMIN_STUDENTS_PAGE.ACTIONS.EMAIL, icon: 'email', onClick: () => {} },
+    { id: 'whatsapp', label: ADMIN_STUDENTS_PAGE.ACTIONS.WHATSAPP, icon: 'whatsapp', onClick: () => {} },
+    { id: 'delete', label: ADMIN_STUDENTS_PAGE.ACTIONS.DELETE, icon: 'custom', onClick: () => {} },
+  ]
+}
+
+const programTabs = [
+  { id: 'all', label: ADMIN_STUDENTS_PAGE.FILTERS.ALL, value: 'all' as const },
+  { id: 'hefaza', label: ADMIN_STUDENTS_PAGE.FILTERS.HEFAZA, value: 1 },
+  { id: 'fursan', label: ADMIN_STUDENTS_PAGE.FILTERS.FURSAN, value: 2 },
+]
+
+const studentColumns = [
+  { key: 'student', label: ADMIN_STUDENTS_PAGE.TABLE.STUDENT, width: '18%' },
+  { key: 'program', label: ADMIN_STUDENTS_PAGE.TABLE.PROGRAM, width: '10%' },
+  { key: 'program_track', label: ADMIN_STUDENTS_PAGE.TABLE.TRACK, width: '18%' },
+  { key: 'teacher', label: ADMIN_STUDENTS_PAGE.TABLE.TEACHER, width: '12%' },
+  { key: 'group', label: ADMIN_STUDENTS_PAGE.TABLE.GROUP, width: '10%' },
+  { key: 'status', label: ADMIN_STUDENTS_PAGE.TABLE.STATUS, width: '10%' },
+  { key: 'warnings_count', label: ADMIN_STUDENTS_PAGE.TABLE.WARNINGS, width: '6%' },
+  { key: 'leaves_count', label: ADMIN_STUDENTS_PAGE.TABLE.LEAVES, width: '6%' },
+  { key: 'score', label: ADMIN_STUDENTS_PAGE.TABLE.RATING, width: '5%' },
+  { key: 'actions', label: ADMIN_STUDENTS_PAGE.TABLE.ACTIONS, width: '5%' },
+]
+
+watch(programFilter, () => fetchStudents())
+onMounted(() => fetchStudents())
 </script>
 
 <template>
   <div class="admin-students" data-component="AdminStudentsView">
     <div class="admin-students__header">
-      <h1 class="admin-students__title">
-        {{ ADMIN_LABELS.STUDENTS_LIST }}
-      </h1>
+      <h1 class="admin-students__title">{{ ADMIN_STUDENTS_PAGE.PAGE_TITLE }}</h1>
     </div>
 
-    <div class="admin-students__content">
-      <p>قائمة الطلاب - قيد التطوير</p>
+    <div v-if="error" class="admin-students__error">{{ error }}</div>
+
+    <div v-if="loading && !data" class="admin-students__loading">
+      <AppLoading :full-screen="false" text="جاري تحميل الطلاب..." />
     </div>
+
+    <template v-else>
+      <!-- Stats Cards (same design & animation as admin dashboard) -->
+      <section class="admin-students__stats">
+        <div class="admin-students__stats-grid">
+          <div
+            v-for="card in statCards"
+            :key="card.key"
+            class="admin-students__stat-card-wrapper"
+          >
+            <div class="admin-students__stat-card">
+              <div
+                class="admin-students__stat-icon"
+                :style="{ backgroundColor: card.iconBg }"
+              >
+                <svg
+                  v-if="card.key === 'total'"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <svg
+                  v-else-if="card.key === 'active'"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                  <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                </svg>
+                <svg
+                  v-else
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <div class="admin-students__stat-content">
+                <div class="admin-students__stat-value">
+                  <span v-if="loading" class="admin-students__stat-skeleton">---</span>
+                  <span v-else>{{ card.value }}</span>
+                </div>
+                <div class="admin-students__stat-label">{{ card.label }}</div>
+                <div
+                  class="admin-students__stat-tag"
+                  :style="{
+                    backgroundColor: card.tagColor.background,
+                    color: card.tagColor.text,
+                  }"
+                >
+                  {{ card.tag }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Filters & Actions Bar -->
+      <div class="admin-students__toolbar">
+        <div class="admin-students__program-filters">
+          <BaseTabs v-model="programFilter" :tabs="programTabs" />
+        </div>
+        <div class="admin-students__toolbar-right">
+          <div class="admin-students__search-wrap">
+            <input
+              v-model="searchQuery"
+              type="search"
+              class="admin-students__search"
+              :placeholder="ADMIN_STUDENTS_PAGE.FILTERS.SEARCH_PLACEHOLDER"
+            />
+          </div>
+          <select v-model="statusFilter" class="admin-students__select">
+            <option value="">{{ ADMIN_STUDENTS_PAGE.FILTERS.ALL_STATUSES }}</option>
+          </select>
+          <select v-model="studentFilter" class="admin-students__select">
+            <option value="">{{ ADMIN_STUDENTS_PAGE.FILTERS.SELECT_STUDENT }}</option>
+          </select>
+          <button type="button" class="admin-students__export-btn">
+            {{ ADMIN_STUDENTS_PAGE.FILTERS.EXPORT }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="admin-students__table-section">
+        <h2 class="admin-students__section-title">{{ ADMIN_STUDENTS_PAGE.SECTION_TITLE }}</h2>
+        <BaseTable
+          :columns="studentColumns"
+          :data="filteredStudents"
+          :loading="loading"
+          :page-size-options="[5, 10, 25]"
+        >
+          <template #cell-student="{ row }">
+            <div class="admin-students__cell-student">
+              <span class="admin-students__cell-name">{{ row.full_name }}</span>
+              <span v-if="row.level" class="admin-students__cell-level">{{ row.level }}</span>
+            </div>
+          </template>
+          <template #cell-program="{ row }">
+            <span v-if="row.program" class="admin-students__badge admin-students__badge--program">
+              {{ row.program }}
+            </span>
+            <span v-else>---</span>
+          </template>
+          <template #cell-program_track="{ row }">
+            {{ row.program_track || '---' }}
+          </template>
+          <template #cell-teacher="{ row }">
+            {{ row.teacher || '---' }}
+          </template>
+          <template #cell-group="{ row }">
+            {{ row.level || '---' }}
+          </template>
+          <template #cell-status="{ row }">
+            <span
+              class="admin-students__badge admin-students__badge--status"
+              :style="getStatusStyle(getStatusLabel(row))"
+            >
+              {{ getStatusLabel(row) }}
+            </span>
+          </template>
+          <template #cell-warnings_count="{ row }">
+            {{ row.warnings_count ?? '---' }}
+          </template>
+          <template #cell-leaves_count="{ row }">
+            {{ row.leaves_count ?? '---' }}
+          </template>
+          <template #cell-score="{ row }">
+            <span class="admin-students__rating">
+              {{ row.score ?? 0 }}
+              <svg class="admin-students__star" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </span>
+          </template>
+          <template #cell-actions="{ row }">
+            <div class="admin-students__actions-cell" @click.stop>
+              <ActionMenu :items="getActionItems(row)" />
+            </div>
+          </template>
+        </BaseTable>
+      </div>
+
+      <StudentProfileDrawer
+        v-model="showProfileDrawer"
+        :student-id="selectedStudentId"
+        :get-student="getStudentForDrawer"
+      />
+
+      <AssignStudentDialog
+        v-model="showAssignDialog"
+        :student="assignStudent"
+        @success="onAssignSuccess"
+      />
+    </template>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .admin-students {
+  direction: rtl;
   width: 100%;
-  min-height: 100vh;
-  position: relative;
+  max-width: 100%;
 
   &__header {
     margin-bottom: $spacing-4;
@@ -34,11 +408,293 @@ import { ADMIN_LABELS } from '@/config/admin.constants'
     text-align: right;
   }
 
-  &__content {
-    background-color: $color-background-card;
+  &__error {
+    padding: $spacing-4;
+    color: var(--color-error);
+    text-align: center;
+    margin-bottom: $spacing-4;
+  }
+
+  &__loading {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__stats {
+    width: 100%;
+    margin-bottom: $spacing-6;
+  }
+
+  &__stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: $spacing-4;
+    overflow-x: auto;
+    padding-bottom: $spacing-2;
+    scrollbar-width: thin;
+
+    &::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: var(--color-background);
+      border-radius: $radius-full;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--color-border);
+      border-radius: $radius-full;
+    }
+
+    @include sm-max {
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: $spacing-3;
+    }
+  }
+
+  &__stat-card-wrapper {
+    position: relative;
+  }
+
+  &__stat-card {
+    background-color: var(--color-background-card);
     border-radius: $radius-xl;
-    padding: $spacing-6;
+    padding: $spacing-3;
+    box-shadow: $shadow-md;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: visible;
+  }
+
+  &__stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: $radius-lg;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: $shadow-sm;
+    position: absolute;
+    top: $spacing-10;
+    left: $spacing-4;
+    z-index: 2;
+    animation: adminStudentsFloatIcon 3s ease-in-out infinite;
+    transition: transform $transition-fast;
+
+    &:hover {
+      transform: scale(1.1) rotate(5deg);
+      animation-play-state: paused;
+    }
+
+    svg {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+      animation: adminStudentsPulseIcon 2s ease-in-out infinite;
+    }
+  }
+
+  &__stat-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-2;
+    margin-top: $spacing-7;
+  }
+
+  &__stat-value {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: var(--color-text-primary);
+  }
+
+  &__stat-skeleton {
+    color: var(--color-text-muted);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  &__stat-label {
+    font-size: $font-size-sm;
+    color: var(--color-text-secondary);
+    font-weight: $font-weight-medium;
+  }
+
+  &__stat-tag {
+    display: inline-block;
+    padding: $spacing-1 $spacing-3;
+    border-radius: $radius-md;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    align-self: flex-start;
+  }
+
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $spacing-4;
+    margin-bottom: $spacing-6;
+
+    @include sm-max {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  &__program-filters {
+    display: flex;
+    min-width: 0;
+
+    .base-tabs {
+      min-width: 350px;
+
+      @include sm-max {
+        min-width: 0;
+        width: 100%;
+      }
+    }
+  }
+
+  &__toolbar-right {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $spacing-3;
+    margin-right: auto;
+
+    @include sm-max {
+      margin-right: 0;
+    }
+  }
+
+  &__search-wrap {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  &__search {
+    width: 100%;
+    padding: $spacing-2 $spacing-4;
+    border-radius: $radius-md;
+    border: 1px solid var(--color-border);
+    background: var(--color-background-card);
+    font-size: $font-size-sm;
+    color: var(--color-text-primary);
+
+    &::placeholder {
+      color: var(--color-text-muted);
+    }
+  }
+
+  &__select {
+    padding: $spacing-2 $spacing-4;
+    border-radius: $radius-md;
+    border: 1px solid var(--color-border);
+    background: var(--color-background-card);
+    font-size: $font-size-sm;
+    color: var(--color-text-primary);
+    min-width: 140px;
+  }
+
+  &__export-btn {
+    padding: $spacing-2 $spacing-4;
+    border-radius: $radius-md;
+    border: none;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-2;
+  }
+
+  &__table-section {
+    background-color: var(--color-background-card);
+    border-radius: $radius-xl;
+    padding: $spacing-4;
     box-shadow: $shadow-md;
   }
+
+  &__section-title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: var(--color-text-primary);
+    margin: 0 0 $spacing-4 0;
+    text-align: right;
+  }
+
+  &__cell-student {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__cell-name {
+    font-weight: $font-weight-medium;
+  }
+
+  &__cell-level {
+    font-size: $font-size-xs;
+    color: var(--color-text-muted);
+  }
+
+  &__badge {
+    display: inline-block;
+    padding: $spacing-1 $spacing-3;
+    border-radius: $radius-full;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+
+    &--program {
+      background-color: rgba(244, 244, 244, 1);
+      color: var(--color-text-primary);
+    }
+
+    &--status {
+      /* colors applied via :style from getStatusStyle() */
+      min-width: 4rem;
+    }
+  }
+
+  &__rating {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-1;
+    font-weight: $font-weight-medium;
+    color: var(--color-text-primary);
+  }
+
+  &__star {
+    color: #F59E0B;
+    flex-shrink: 0;
+  }
+
+  &__actions-cell {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes adminStudentsFloatIcon {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes adminStudentsPulseIcon {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.9; }
 }
 </style>
