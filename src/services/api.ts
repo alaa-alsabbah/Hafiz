@@ -118,7 +118,8 @@ export async function apiRequest<T = any>(options: ApiRequestOptions): Promise<A
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  // Set content type
+  // Set Accept and Content-Type
+  headers['Accept'] = 'application/json'
   if (data && !(data instanceof FormData)) {
     headers['Content-Type'] = 'application/json'
   }

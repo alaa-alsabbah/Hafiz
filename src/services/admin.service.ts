@@ -95,6 +95,46 @@ export interface AdminStudent {
   leaves_count: number | null
 }
 
+/** Extended student detail with IDs (for edit form) - API may return these from GET /admin/students/:id */
+export interface AdminStudentDetail extends AdminStudent {
+  gender_id?: number
+  education_level_id?: number
+  how_did_you_know_us_id?: number
+  quran_memorization_level_id?: number
+  interview_time_preference_id?: number
+  program_id?: number
+  program_track_id?: number
+  phone_country_code?: string
+  birth_date?: string | null
+  job?: string | null
+  volunteer?: string | null
+  level_id?: number | null
+  watched_intro_video_id?: number
+}
+
+/** Payload for POST /admin/students/:id (update student) */
+export interface UpdateAdminStudentPayload {
+  full_name: string
+  email: string
+  country: string
+  gender_id: number
+  birth_date: string
+  education_level_id: number
+  how_did_you_know_us_id: number
+  has_ijaza_id: number
+  phone_country_code: string
+  phone_number: string
+  residence: string
+  quran_memorization_level_id: number
+  watched_intro_video: boolean
+  interview_time_preference_id: number
+  program_id: number
+  program_track_id: number
+  job: string
+  volunteer: boolean
+  level_id: number
+}
+
 export interface AdminStudentsData {
   full_counts: number
   active_count: number
@@ -114,10 +154,21 @@ export async function getAdminStudents(programId?: number): Promise<ApiResponse<
 }
 
 /**
- * Get a single student by id (for admin عرض الطالب)
+ * Get a single student by id (for admin عرض الطالب / edit form)
  */
-export async function getAdminStudent(id: number): Promise<ApiResponse<AdminStudent>> {
-  return api.get<AdminStudent>(`${ADMIN_API_ENDPOINTS.STUDENTS}/${id}`)
+export async function getAdminStudent(id: number): Promise<ApiResponse<AdminStudentDetail>> {
+  return api.get<AdminStudentDetail>(`${ADMIN_API_ENDPOINTS.STUDENTS}/${id}`)
+}
+
+/**
+ * Update a student
+ * POST /admin/students/:id
+ */
+export async function updateAdminStudent(
+  id: number,
+  payload: UpdateAdminStudentPayload
+): Promise<ApiResponse<string>> {
+  return api.post<string>(`${ADMIN_API_ENDPOINTS.STUDENTS}/${id}`, payload)
 }
 
 /**

@@ -229,7 +229,7 @@ const router = createRouter({
 
 // Navigation guards
 router.beforeEach((to, from, next) => {
-  console.log('Router navigation:', { from: from.path, to: to.path, toName: to.name })
+ // console.log('Router navigation:', { from: from.path, to: to.path, toName: to.name })
   const token = localStorage.getItem('access_token')
   const authStore = useAuthStore()
   

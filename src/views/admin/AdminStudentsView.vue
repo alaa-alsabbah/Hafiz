@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { BaseTable, AppLoading, StudentProfileDrawer, AssignStudentDialog } from '@/components/common'
+import { BaseTable, AppLoading, StudentProfileDrawer, AssignStudentDialog, EditStudentDialog } from '@/components/common'
 import type { AssignStudentPayload } from '@/components/common/AssignStudentDialog.vue'
 import { ActionMenu, BaseTabs } from '@/components/ui'
 import type { ActionMenuItem } from '@/components/ui/ActionMenu.vue'
@@ -24,6 +24,9 @@ const selectedStudentId = ref<number | null>(null)
 
 const showAssignDialog = ref(false)
 const assignStudent = ref<AssignStudentPayload | null>(null)
+
+const showEditDialog = ref(false)
+const editStudentId = ref<number | null>(null)
 
 async function fetchStudents() {
   loading.value = true
@@ -119,7 +122,16 @@ function openAssignDialog(row: AdminStudent) {
   showAssignDialog.value = true
 }
 
+function openEditDialog(row: AdminStudent) {
+  editStudentId.value = row.id
+  showEditDialog.value = true
+}
+
 function onAssignSuccess() {
+  fetchStudents()
+}
+
+function onEditSuccess() {
   fetchStudents()
 }
 
@@ -167,7 +179,7 @@ function getActionItems(row: AdminStudent): ActionMenuItem[] {
   return [
     { id: 'view', label: ADMIN_STUDENTS_PAGE.ACTIONS.VIEW, icon: 'eye', onClick: () => openStudentProfile(row.id) },
     { id: 'assign', label: ADMIN_STUDENTS_PAGE.ACTIONS.ASSIGN, icon: 'user-plus', onClick: () => openAssignDialog(row) },
-    { id: 'edit', label: ADMIN_STUDENTS_PAGE.ACTIONS.EDIT, icon: 'custom', onClick: () => {} },
+    { id: 'edit', label: ADMIN_STUDENTS_PAGE.ACTIONS.EDIT, icon: 'custom', onClick: () => openEditDialog(row) },
     { id: 'email', label: ADMIN_STUDENTS_PAGE.ACTIONS.EMAIL, icon: 'email', onClick: () => {} },
     { id: 'whatsapp', label: ADMIN_STUDENTS_PAGE.ACTIONS.WHATSAPP, icon: 'whatsapp', onClick: () => {} },
     { id: 'delete', label: ADMIN_STUDENTS_PAGE.ACTIONS.DELETE, icon: 'custom', onClick: () => {} },
@@ -385,6 +397,12 @@ onMounted(() => fetchStudents())
         v-model="showAssignDialog"
         :student="assignStudent"
         @success="onAssignSuccess"
+      />
+
+      <EditStudentDialog
+        v-model="showEditDialog"
+        :student-id="editStudentId"
+        @success="onEditSuccess"
       />
     </template>
   </div>
