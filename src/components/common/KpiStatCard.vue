@@ -8,6 +8,8 @@ export type KpiStatCardIcon =
   | 'active'
   | 'hefaza'
   | 'fursan'
+  | 'golden'
+  | 'silver'
 
 interface Props {
   value: number | string
@@ -121,6 +123,39 @@ withDefaults(defineProps<Props>(), {
       >
         <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
         <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+      </svg>
+      <!-- Golden / Trophy -->
+      <svg
+        v-else-if="icon === 'golden'"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M8 21h8M12 17v4M7 4h10l1 7H6l1-7z"/>
+        <path d="M7 4V3a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1"/>
+        <path d="M12 17a5 5 0 0 0 5-5c0-2-1-3-2-4h-6c-1 1-2 2-2 4a5 5 0 0 0 5 5z"/>
+      </svg>
+      <!-- Silver / Medal -->
+      <svg
+        v-else-if="icon === 'silver'"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="8" r="6"/>
+        <path d="M12 14v6"/>
+        <path d="M8 20h8"/>
+        <path d="M9 11l2 2 4-4"/>
       </svg>
       <!-- Hefaza / Fursan - graduation cap -->
       <svg

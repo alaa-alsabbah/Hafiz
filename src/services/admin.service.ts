@@ -6,6 +6,7 @@ const ADMIN_API_ENDPOINTS = {
   DASHBOARD: '/admin/dashboard',
   STUDENTS: '/admin/students',
   ATTENDANCES: '/admin/attendances',
+  PRESENTATION_TESTS: '/admin/presentation_tests',
   WEEKLY_REPORT: '/admin/weekly-report',
   PRESENTATION_TEST: '/admin/presentation-test',
   PERMISSION: '/admin/permission',
@@ -230,6 +231,43 @@ export async function getAdminAttendances(
 ): Promise<ApiResponse<AdminAttendancesData>> {
   const params = programId != null ? { program_id: String(programId) } : undefined
   return api.get<AdminAttendancesData>(ADMIN_API_ENDPOINTS.ATTENDANCES, params)
+}
+
+/** Admin presentation test - single record */
+export interface AdminPresentationTest {
+  id: number
+  student_id?: number
+  full_name: string
+  program_track: string
+  program: string
+  level: string
+  score_presentation: string
+  score_tests: string
+  created_at: string
+}
+
+export interface AdminPresentationTestsCounts {
+  six_months_huffaz_count: number
+  one_year_itqan_count: number
+  two_years_itqan_count: number
+  one_years_silver_count: number
+  three_years_golden_count: number
+}
+
+export interface AdminPresentationTestsData {
+  counts: AdminPresentationTestsCounts
+  data: AdminPresentationTest[]
+}
+
+/**
+ * Get admin presentation tests with optional program filter
+ * @param programId - optional, e.g. 1 for حفظة, 2 for فرسان
+ */
+export async function getAdminPresentationTests(
+  programId?: number
+): Promise<ApiResponse<AdminPresentationTestsData>> {
+  const params = programId != null ? { program_id: String(programId) } : undefined
+  return api.get<AdminPresentationTestsData>(ADMIN_API_ENDPOINTS.PRESENTATION_TESTS, params)
 }
 
 /**

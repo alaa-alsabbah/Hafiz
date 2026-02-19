@@ -21,6 +21,8 @@ interface Props {
   dateModelValue?: string
   showExport?: boolean
   exportLabel?: string
+  showStatusFilter?: boolean
+  showStudentFilter?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -38,6 +40,8 @@ const props = withDefaults(defineProps<Props>(), {
   dateModelValue: '',
   showExport: true,
   exportLabel: 'تصدير',
+  showStatusFilter: true,
+  showStudentFilter: true,
 })
 
 const emit = defineEmits<{
@@ -82,7 +86,7 @@ const emit = defineEmits<{
         />
       </div>
 
-      <div class="data-table-filter-bar__select-wrap">
+      <div v-if="showStatusFilter" class="data-table-filter-bar__select-wrap">
         <select
           :value="statusModelValue"
           class="data-table-filter-bar__select"
@@ -95,7 +99,7 @@ const emit = defineEmits<{
         </select>
       </div>
 
-      <div v-if="studentOptions.length > 0" class="data-table-filter-bar__select-wrap">
+      <div v-if="showStudentFilter && studentOptions.length > 0" class="data-table-filter-bar__select-wrap">
         <select
           :value="studentModelValue"
           class="data-table-filter-bar__select"

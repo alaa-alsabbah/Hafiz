@@ -190,6 +190,45 @@ export const ADMIN_WEEKLY_REPORT_PAGE = {
   },
 } as const
 
+// العرض والاختبار (Presentation Test) page
+export const ADMIN_PRESENTATION_TEST_PAGE = {
+  PAGE_TITLE: 'العرض والاختبار',
+  SECTION_TITLE: 'نظرة عامة على جميع الطلاب',
+  STATS: {
+    GOLDEN: { LABEL: 'المسار الذهبي الكامل', TAG: 'الذهبي', TAG_COLOR: { background: 'rgba(255, 243, 224, 1)', text: '#E65100' } },
+    SILVER: { LABEL: 'مسار الفضة الكامل', TAG: 'الفضي', TAG_COLOR: { background: 'rgba(227, 242, 253, 1)', text: '#1565C0' } },
+    SIX_MONTHS: { LABEL: 'مسار الإتقان في ستة أشهر', TAG: 'ستة أشهر', TAG_COLOR: ADMIN_TAG_COLORS.green },
+    ONE_YEAR: { LABEL: 'مسار الإتقان في سنة', TAG: 'سنة', TAG_COLOR: ADMIN_TAG_COLORS.blue },
+    TWO_YEARS: { LABEL: 'مسار الحفظ في سنتين', TAG: 'سنتين', TAG_COLOR: ADMIN_TAG_COLORS.green },
+    PRESENTATION_40: { LABEL: 'إجمالي تقييم العرض 40+', TAG: 'الفضي', TAG_COLOR: { background: 'rgba(227, 242, 253, 1)', text: '#1565C0' } },
+  },
+  FILTERS: {
+    ALL: 'الكل',
+    HEFAZA: 'برنامج حفظة',
+    FURSAN: 'برنامج فرسان',
+    SEARCH_PLACEHOLDER: 'ابحث بالاسم أو البريد الإلكتروني...',
+    ALL_STATUSES: 'جميع الحالات',
+    SELECT_STUDENT: 'اختر طالبا محددا',
+    EXPORT: 'تصدير',
+    DATE_PLACEHOLDER: 'التاريخ',
+  },
+  TABLE: {
+    STUDENT: 'طالب',
+    PROGRAM: 'البرنامج',
+    TRACK: 'المسار',
+    LEVEL: 'المرحلة / المستوى المعروض',
+    SCORE_PRESENTATION: 'درجة العرض (50/50)',
+    SCORE_TESTS: 'درجة الاختبار (50/50)',
+    DATE: 'تاريخ العرض',
+    ACTIONS: 'إجراءات',
+  },
+  ACTIONS: {
+    VIEW: 'عرض الطالب',
+    EMAIL: 'إرسال بريد إلكتروني',
+    WHATSAPP: 'إرسال واتساب',
+  },
+} as const
+
 // Admin menu item types for hierarchical sidemenu
 export interface AdminMenuItem {
   label: string
