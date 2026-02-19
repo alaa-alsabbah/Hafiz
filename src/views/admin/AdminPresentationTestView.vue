@@ -199,9 +199,7 @@ onMounted(() => fetchPresentationTests())
 
 <template>
   <div class="admin-presentation-test" data-component="AdminPresentationTestView">
-    <div class="admin-presentation-test__header">
-      <h1 class="admin-presentation-test__title">{{ ADMIN_PRESENTATION_TEST_PAGE.PAGE_TITLE }}</h1>
-    </div>
+   
 
     <div v-if="error" class="admin-presentation-test__error">{{ error }}</div>
 

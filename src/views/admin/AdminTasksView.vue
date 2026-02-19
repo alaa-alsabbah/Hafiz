@@ -213,9 +213,7 @@ onMounted(() => fetchStudents())
 
 <template>
   <div class="admin-tasks" data-component="AdminTasksView">
-    <div class="admin-tasks__header">
-      <h1 class="admin-tasks__title">{{ ADMIN_TASKS_PAGE.PAGE_TITLE }}</h1>
-    </div>
+
 
     <div v-if="error" class="admin-tasks__error">{{ error }}</div>
 

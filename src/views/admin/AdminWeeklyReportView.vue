@@ -222,9 +222,7 @@ onMounted(() => fetchAttendances())
 
 <template>
   <div class="admin-weekly-report" data-component="AdminWeeklyReportView">
-    <div class="admin-weekly-report__header">
-      <h1 class="admin-weekly-report__title">{{ ADMIN_WEEKLY_REPORT_PAGE.PAGE_TITLE }}</h1>
-    </div>
+ 
 
     <div v-if="error" class="admin-weekly-report__error">{{ error }}</div>
 

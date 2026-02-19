@@ -124,9 +124,7 @@ onMounted(() => fetchLeaves())
 
 <template>
   <div class="admin-permission" data-component="AdminPermissionView">
-    <div class="admin-permission__header">
-      <h1 class="admin-permission__title">{{ ADMIN_PERMISSION_PAGE.PAGE_TITLE }}</h1>
-    </div>
+
 
     <div v-if="error" class="admin-permission__error">{{ error }}</div>
 

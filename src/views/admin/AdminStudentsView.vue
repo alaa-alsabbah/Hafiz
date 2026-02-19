@@ -245,9 +245,7 @@ onMounted(() => fetchStudents())
 
 <template>
   <div class="admin-students" data-component="AdminStudentsView">
-    <div class="admin-students__header">
-      <h1 class="admin-students__title">{{ ADMIN_STUDENTS_PAGE.PAGE_TITLE }}</h1>
-    </div>
+  
 
     <div v-if="error" class="admin-students__error">{{ error }}</div>
 
