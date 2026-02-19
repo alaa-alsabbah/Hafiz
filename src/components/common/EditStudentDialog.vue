@@ -15,6 +15,7 @@ import type { LookupItem } from '@/services/lookups.service'
 import { LOOKUP_GROUPS } from '@/services/lookups.service'
 import { ADMIN_STUDENTS_PAGE } from '@/config/admin.constants'
 import { ApiException } from '@/services/api'
+import AppLoading from '@/components/common/AppLoading.vue'
 
 interface Props {
   modelValue: boolean
@@ -55,6 +56,7 @@ const studentLoading = ref(false)
 const submitting = ref(false)
 const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
+const showSuccessState = ref(false)
 
 // Lookups
 const lookups = ref<Record<string, LookupItem[]>>({})
@@ -259,6 +261,7 @@ function resetForm() {
   levelId.value = null
   error.value = null
   successMessage.value = null
+  showSuccessState.value = false
 }
 
 watch(
@@ -298,7 +301,7 @@ function formatDateForApi(val: string): string {
   return `${y}-${m}-${day}`
 }
 
-function closeDialog() {
+function closeDrawer() {
   emit('update:modelValue', false)
 }
 
@@ -309,7 +312,7 @@ function onProgramTrackSelect(v: string | number | null) {
 }
 
 function handleOverlayClick(e: MouseEvent) {
-  if (e.target === e.currentTarget) closeDialog()
+  if (e.target === e.currentTarget) closeDrawer()
 }
 
 async function handleSave() {
@@ -370,10 +373,12 @@ async function handleSave() {
     const res = await updateAdminStudent(props.studentId, payload)
     if (res.success) {
       successMessage.value = L.SUCCESS
+      showSuccessState.value = true
       setTimeout(() => {
-        closeDialog()
+        closeDrawer()
         emit('success')
-      }, 1500)
+        showSuccessState.value = false
+      }, 2200)
     } else {
       error.value = res.message ?? 'فشل تحديث البيانات'
     }
@@ -392,18 +397,18 @@ async function handleSave() {
 
 <template>
   <Teleport to="body">
-    <Transition name="dialog">
+    <Transition name="drawer">
       <div
         v-if="modelValue"
-        class="edit-student-dialog"
+        class="edit-student-drawer"
         @click="handleOverlayClick"
       >
-        <div class="edit-student-dialog__content">
+        <aside class="edit-student-drawer__panel">
           <button
             type="button"
-            class="edit-student-dialog__close"
+            class="edit-student-drawer__close"
             aria-label="إغلاق"
-            @click="closeDialog"
+            @click="closeDrawer"
           >
             <svg
               width="16"
@@ -417,25 +422,39 @@ async function handleSave() {
             </svg>
           </button>
 
-          <h2 class="edit-student-dialog__title">{{ L.TITLE }}</h2>
-          <p class="edit-student-dialog__subtitle">{{ L.SUBTITLE }}</p>
+          <h2 class="edit-student-drawer__title">{{ L.TITLE }}</h2>
+          <p class="edit-student-drawer__subtitle">{{ L.SUBTITLE }}</p>
 
-          <div v-if="studentLoading" class="edit-student-dialog__loading">
-            جاري تحميل البيانات...
+          <div v-if="studentLoading" class="edit-student-drawer__loading">
+            <AppLoading :full-screen="false" text="جاري تحميل البيانات..." />
+          </div>
+
+          <div
+            v-else-if="showSuccessState"
+            class="edit-student-drawer__success-state"
+          >
+            <div class="edit-student-drawer__success-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            </div>
+            <h3 class="edit-student-drawer__success-title">تم التحديث بنجاح</h3>
+            <p class="edit-student-drawer__success-message">{{ L.SUCCESS }}</p>
           </div>
 
           <form
             v-else
-            class="edit-student-dialog__form"
+            class="edit-student-drawer__form"
             @submit.prevent="handleSave"
           >
-            <div class="edit-student-dialog__grid">
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label">{{ L.FULL_NAME }} *</label>
+            <div class="edit-student-drawer__grid">
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label">{{ L.FULL_NAME }} *</label>
                 <BaseInput v-model="fullName" :placeholder="L.FULL_NAME" required />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label">{{ L.EMAIL }} *</label>
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label">{{ L.EMAIL }} *</label>
                 <BaseInput
                   v-model="email"
                   type="email"
@@ -443,12 +462,12 @@ async function handleSave() {
                   required
                 />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label">{{ L.COUNTRY }} *</label>
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label">{{ L.COUNTRY }} *</label>
                 <BaseInput v-model="country" :placeholder="L.COUNTRY" required />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label">{{ L.GENDER }} *</label>
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label">{{ L.GENDER }} *</label>
                 <BaseSelect
                   :model-value="genderId"
                   :options="genderOptions"
@@ -459,12 +478,12 @@ async function handleSave() {
                   "
                 />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label">{{ L.BIRTH_DATE }} *</label>
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label">{{ L.BIRTH_DATE }} *</label>
                 <BaseDatePicker v-model="birthDate" :placeholder="L.BIRTH_DATE" />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label"
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label"
                   >{{ L.EDUCATION_LEVEL }} *</label
                 >
                 <BaseSelect
@@ -478,8 +497,8 @@ async function handleSave() {
                   "
                 />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label"
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label"
                   >{{ L.HOW_DID_YOU_KNOW_US }} *</label
                 >
                 <BaseSelect
@@ -493,20 +512,20 @@ async function handleSave() {
                   "
                 />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label">{{ L.PHONE }} *</label>
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label">{{ L.PHONE }} *</label>
                 <BasePhoneInput
                   v-model="phoneNumber"
                   v-model:country-code="phoneCountryCode"
                   :placeholder="L.PHONE"
                 />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label">{{ L.RESIDENCE }} *</label>
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label">{{ L.RESIDENCE }} *</label>
                 <BaseInput v-model="residence" :placeholder="L.RESIDENCE" required />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label"
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label"
                   >{{ L.QURAN_MEMORIZATION_LEVEL }} *</label
                 >
                 <BaseSelect
@@ -520,8 +539,8 @@ async function handleSave() {
                   "
                 />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label"
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label"
                   >{{ L.HAS_IJAZA }} *</label
                 >
                 <BaseSelect
@@ -535,8 +554,8 @@ async function handleSave() {
                   "
                 />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label"
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label"
                   >{{ L.WATCHED_INTRO_VIDEO }} *</label
                 >
                 <BaseSelect
@@ -554,8 +573,8 @@ async function handleSave() {
                   "
                 />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label"
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label"
                   >{{ L.INTERVIEW_TIME_PREFERENCE }} *</label
                 >
                 <BaseSelect
@@ -569,8 +588,8 @@ async function handleSave() {
                   "
                 />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label">{{ L.PROGRAM }} *</label>
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label">{{ L.PROGRAM }} *</label>
                 <BaseSelect
                   :model-value="programTrackId"
                   :options="programOptions"
@@ -578,8 +597,8 @@ async function handleSave() {
                   @update:model-value="onProgramTrackSelect"
                 />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label"
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label"
                   >{{ L.PROGRAM_TRACK }} *</label
                 >
                 <BaseSelect
@@ -589,12 +608,12 @@ async function handleSave() {
                   @update:model-value="onProgramTrackSelect"
                 />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label">{{ L.JOB }}</label>
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label">{{ L.JOB }}</label>
                 <BaseInput v-model="job" :placeholder="L.JOB" />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label">{{ L.VOLUNTEER }} *</label>
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label">{{ L.VOLUNTEER }} *</label>
                 <BaseSelect
                   :model-value="volunteer === true ? 'true' : volunteer === false ? 'false' : ''"
                   :options="yesNoBooleanOptions"
@@ -610,8 +629,8 @@ async function handleSave() {
                   "
                 />
               </div>
-              <div class="edit-student-dialog__field">
-                <label class="edit-student-dialog__label">{{ L.LEVEL }} *</label>
+              <div class="edit-student-drawer__field">
+                <label class="edit-student-drawer__label">{{ L.LEVEL }} *</label>
                 <BaseSelect
                   :model-value="levelId"
                   :options="levelOptions"
@@ -624,64 +643,70 @@ async function handleSave() {
               </div>
             </div>
 
-            <p v-if="successMessage" class="edit-student-dialog__success">
+            <p v-if="successMessage" class="edit-student-drawer__success">
               {{ successMessage }}
             </p>
-            <p v-if="error" class="edit-student-dialog__error">{{ error }}</p>
+            <p v-if="error" class="edit-student-drawer__error">{{ error }}</p>
 
-            <div class="edit-student-dialog__actions">
+            <div class="edit-student-drawer__actions">
               <button
                 type="submit"
-                class="edit-student-dialog__btn edit-student-dialog__btn--primary"
+                class="edit-student-drawer__btn edit-student-drawer__btn--primary"
                 :disabled="submitting"
               >
                 {{ submitting ? L.SAVING : L.SAVE }}
               </button>
               <button
                 type="button"
-                class="edit-student-dialog__btn edit-student-dialog__btn--cancel"
-                @click="closeDialog"
+                class="edit-student-drawer__btn edit-student-drawer__btn--cancel"
+                @click="closeDrawer"
               >
                 {{ L.CANCEL }}
               </button>
             </div>
           </form>
-        </div>
+        </aside>
       </div>
     </Transition>
   </Teleport>
 </template>
 
 <style lang="scss" scoped>
-.edit-student-dialog {
+.edit-student-drawer {
   position: fixed;
   inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
   z-index: 1000;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: $spacing-4;
-  background: rgba(0, 0, 0, 0.4);
+  justify-content: flex-end;
+  align-items: stretch;
   direction: rtl;
-  overflow-y: auto;
 }
 
-.edit-student-dialog__content {
-  position: relative;
+.edit-student-drawer__panel {
   width: 100%;
   max-width: 720px;
-  max-height: 90vh;
-  overflow-y: auto;
   background: #fff;
-  border-radius: $radius-xl;
-  box-shadow: $shadow-lg;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-y: auto;
   padding: $spacing-6;
+  padding-top: $spacing-10;
+  border-radius: 0 $radius-2xl $radius-2xl 0;
+
+  @media (max-width: 600px) {
+    max-width: 100%;
+    border-radius: 0;
+  }
 }
 
-.edit-student-dialog__close {
+.edit-student-drawer__close {
   position: absolute;
-  top: $spacing-4;
-  left: $spacing-4;
+  top: $spacing-3;
+  right: $spacing-3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -699,7 +724,7 @@ async function handleSave() {
   }
 }
 
-.edit-student-dialog__title {
+.edit-student-drawer__title {
   font-size: $font-size-2xl;
   font-weight: $font-weight-bold;
   color: var(--color-text-primary);
@@ -707,26 +732,77 @@ async function handleSave() {
   text-align: right;
 }
 
-.edit-student-dialog__subtitle {
+.edit-student-drawer__subtitle {
   font-size: $font-size-sm;
   color: var(--color-text-secondary);
   margin: 0 0 $spacing-5;
   text-align: right;
 }
 
-.edit-student-dialog__loading {
-  padding: $spacing-8;
-  text-align: center;
-  color: var(--color-text-secondary);
+.edit-student-drawer__loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
 }
 
-.edit-student-dialog__form {
+.edit-student-drawer__success-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-4;
+  padding: $spacing-8;
+  min-height: 280px;
+  animation: successFadeIn 0.4s ease-out;
+}
+
+.edit-student-drawer__success-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.3) 100%);
+  color: #059669;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: successScale 0.5s ease-out 0.2s both;
+}
+
+.edit-student-drawer__success-title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: var(--color-text-primary);
+  margin: 0;
+  text-align: center;
+}
+
+.edit-student-drawer__success-message {
+  font-size: $font-size-base;
+  color: var(--color-text-secondary);
+  margin: 0;
+  text-align: center;
+}
+
+@keyframes successFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes successScale {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.edit-student-drawer__form {
   display: flex;
   flex-direction: column;
   gap: $spacing-4;
 }
 
-.edit-student-dialog__grid {
+.edit-student-drawer__grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: $spacing-4;
@@ -736,20 +812,20 @@ async function handleSave() {
   }
 }
 
-.edit-student-dialog__field {
+.edit-student-drawer__field {
   display: flex;
   flex-direction: column;
   gap: $spacing-2;
 }
 
-.edit-student-dialog__label {
+.edit-student-drawer__label {
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   color: var(--color-text-primary);
   text-align: right;
 }
 
-.edit-student-dialog__success {
+.edit-student-drawer__success {
   padding: $spacing-3 $spacing-4;
   background: rgba(16, 185, 129, 0.12);
   color: #059669;
@@ -760,14 +836,14 @@ async function handleSave() {
   text-align: right;
 }
 
-.edit-student-dialog__error {
+.edit-student-drawer__error {
   color: var(--color-error);
   font-size: $font-size-sm;
   margin: 0;
   text-align: right;
 }
 
-.edit-student-dialog__actions {
+.edit-student-drawer__actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -775,7 +851,7 @@ async function handleSave() {
   flex-wrap: wrap;
 }
 
-.edit-student-dialog__btn {
+.edit-student-drawer__btn {
   padding: $spacing-2 $spacing-5;
   border-radius: $radius-lg;
   font-size: $font-size-base;
@@ -809,23 +885,23 @@ async function handleSave() {
   }
 }
 
-.dialog-enter-active,
-.dialog-leave-active {
-  transition: opacity 0.2s ease;
+.drawer-enter-active,
+.drawer-leave-active {
+  transition: opacity 0.25s ease;
 }
 
-.dialog-enter-from,
-.dialog-leave-to {
+.drawer-enter-from,
+.drawer-leave-to {
   opacity: 0;
 }
 
-.dialog-enter-active .edit-student-dialog__content,
-.dialog-leave-active .edit-student-dialog__content {
-  transition: transform 0.2s ease;
+.drawer-enter-active .edit-student-drawer__panel,
+.drawer-leave-active .edit-student-drawer__panel {
+  transition: transform 0.3s ease;
 }
 
-.dialog-enter-from .edit-student-dialog__content,
-.dialog-leave-to .edit-student-dialog__content {
-  transform: scale(0.96);
+.drawer-enter-from .edit-student-drawer__panel,
+.drawer-leave-to .edit-student-drawer__panel {
+  transform: translateX(100%);
 }
 </style>
