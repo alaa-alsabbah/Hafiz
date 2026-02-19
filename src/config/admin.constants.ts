@@ -229,6 +229,20 @@ export const ADMIN_PRESENTATION_TEST_PAGE = {
   },
 } as const
 
+// الاستئذان (Permission/Leaves) page
+export const ADMIN_PERMISSION_PAGE = {
+  PAGE_TITLE: 'الاستئذان',
+  TAB_PENDING: 'طلب قيد الانتظار',
+  TAB_PROCESSED: 'الطلبات المعالجة',
+  STATUS_ACTIVE: 'نشط',
+  BTN_APPROVE: 'موافق',
+  BTN_REJECT: 'مرفوض',
+  LOAD_MORE: 'تحميل المزيد',
+  SHOW_LESS: 'إظهار أقل',
+  EMPTY_PENDING: 'لا توجد طلبات قيد الانتظار',
+  EMPTY_PROCESSED: 'لا توجد طلبات معالجة',
+} as const
+
 // Admin menu item types for hierarchical sidemenu
 export interface AdminMenuItem {
   label: string

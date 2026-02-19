@@ -7,6 +7,7 @@ const ADMIN_API_ENDPOINTS = {
   STUDENTS: '/admin/students',
   ATTENDANCES: '/admin/attendances',
   PRESENTATION_TESTS: '/admin/presentation_tests',
+  LEAVES: '/admin/leaves',
   WEEKLY_REPORT: '/admin/weekly-report',
   PRESENTATION_TEST: '/admin/presentation-test',
   PERMISSION: '/admin/permission',
@@ -268,6 +269,39 @@ export async function getAdminPresentationTests(
 ): Promise<ApiResponse<AdminPresentationTestsData>> {
   const params = programId != null ? { program_id: String(programId) } : undefined
   return api.get<AdminPresentationTestsData>(ADMIN_API_ENDPOINTS.PRESENTATION_TESTS, params)
+}
+
+/** Admin leave (permission) - single record */
+export interface AdminLeave {
+  id: number
+  full_name: string
+  program_track: string
+  status: string
+  from_date: string
+  to_date: string
+  reason: string
+  student_id: number
+  created_at: string
+}
+
+/**
+ * Get admin leaves (permission requests)
+ * @param isPending - 1 for pending (انتظار), 0 for processed (موافق/رفض)
+ */
+export async function getAdminLeaves(isPending: 0 | 1): Promise<ApiResponse<AdminLeave[]>> {
+  return api.get<AdminLeave[]>(`${ADMIN_API_ENDPOINTS.LEAVES}/${isPending}`)
+}
+
+/**
+ * Approve or reject a leave request
+ * @param id - leave id
+ * @param isApprove - 1 for approve (موافق), 0 for reject (مرفوض)
+ */
+export async function approveRejectLeave(
+  id: number,
+  isApprove: 0 | 1
+): Promise<ApiResponse<string>> {
+  return api.post<string>(`${ADMIN_API_ENDPOINTS.LEAVES}/${id}/${isApprove}`)
 }
 
 /**
