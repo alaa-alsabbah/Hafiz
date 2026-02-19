@@ -472,6 +472,18 @@ onUnmounted(() => {
 
     &--child {
       padding-right: $spacing-8;
+
+      &.admin-layout__nav-item--active {
+        background: transparent;
+        color: var(--color-primary);
+        font-weight: $font-weight-bold;
+        box-shadow: none;
+
+        .admin-layout__nav-icon {
+          filter: none;
+          color: var(--color-primary);
+        }
+      }
     }
   }
 
