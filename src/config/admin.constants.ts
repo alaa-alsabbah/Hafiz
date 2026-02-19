@@ -61,6 +61,7 @@ export const ADMIN_LABELS = {
   WEEKLY_REPORT: 'التقرير الأسبوعي',
   PRESENTATION_TEST: 'العرض والاختبار',
   PERMISSION: 'الاستئذان',
+  TASKS: 'إدارة المهام',
   EVALUATIONS: 'تقييمات المقابلات',
   TEACHERS: 'المعلمون',
   LOGOUT: 'تسجيل الخروج',
@@ -229,6 +230,30 @@ export const ADMIN_PRESENTATION_TEST_PAGE = {
   },
 } as const
 
+// إدارة المهام (Tasks) page
+export const ADMIN_TASKS_PAGE = {
+  PAGE_TITLE: 'إدارة المهام',
+  SELECT_STUDENT: 'اختر طالبًا لعرض المهام',
+  SELECT_STUDENT_PLACEHOLDER: 'اختر طالبًا...',
+  TOTAL: 'إجمالي المهام',
+  COMPLETED: 'مكتملة',
+  PENDING: 'قيد الانتظار',
+  EMPTY: 'لا توجد مهام لهذا الطالب. اختر طالبًا آخر.',
+  EMPTY_NO_STUDENT: 'اختر طالبًا لعرض المهام',
+  VIEW_DETAILS: 'عرض التفاصيل',
+  MARK_COMPLETE: 'تسجيل إكمال',
+  FROM_TO: 'من - إلى',
+  LISTENING: 'الاستماع',
+  REPETITION: 'التكرار',
+  LINK: 'الربط',
+  REVIEW: 'المراجعة',
+  DUE_DATE: 'تاريخ الاستحقاق',
+  CREATED_AT: 'تاريخ الإنشاء',
+  STATUS: 'الحالة',
+  PROGRAM: 'البرنامج',
+  PROGRAM_TRACK: 'المسار',
+} as const
+
 // الاستئذان (Permission/Leaves) page
 export const ADMIN_PERMISSION_PAGE = {
   PAGE_TITLE: 'الاستئذان',
@@ -303,6 +328,12 @@ export const ADMIN_MENU_ITEMS: AdminMenuEntry[] = [
         icon: 'calendar',
       },
     ],
+  },
+  {
+    label: ADMIN_LABELS.TASKS,
+    path: '/admin/tasks',
+    name: 'admin-tasks',
+    icon: 'tasks',
   },
   {
     label: ADMIN_LABELS.EVALUATIONS,

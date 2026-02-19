@@ -9,6 +9,7 @@ import {
   IconUser,
   IconCalendar,
   IconGraduationCap,
+  IconTasks,
   IconLogout,
   IconArrowLeft,
   IconChevronUp,
@@ -39,6 +40,7 @@ const iconMap: Record<string, any> = {
   user: IconUser,
   calendar: IconCalendar,
   'graduation-cap': IconGraduationCap,
+  tasks: IconTasks,
 }
 
 const menuItems = computed(() =>

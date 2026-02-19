@@ -8,6 +8,7 @@ const ADMIN_API_ENDPOINTS = {
   ATTENDANCES: '/admin/attendances',
   PRESENTATION_TESTS: '/admin/presentation_tests',
   LEAVES: '/admin/leaves',
+  TASKS: '/admin/tasks',
   WEEKLY_REPORT: '/admin/weekly-report',
   PRESENTATION_TEST: '/admin/presentation-test',
   PERMISSION: '/admin/permission',
@@ -302,6 +303,45 @@ export async function approveRejectLeave(
   isApprove: 0 | 1
 ): Promise<ApiResponse<string>> {
   return api.post<string>(`${ADMIN_API_ENDPOINTS.LEAVES}/${id}/${isApprove}`)
+}
+
+/** Admin task - single record */
+export interface AdminTask {
+  id: number
+  student_id: number
+  full_name: string
+  program: string
+  program_track: string
+  from_to: string
+  listening: string
+  repetition: string
+  link: string
+  review: string
+  due_date: string
+  created_at: string
+  completed: boolean
+  status: string
+}
+
+/**
+ * Get admin tasks for a student
+ */
+export async function getAdminTasks(studentId: number): Promise<ApiResponse<AdminTask[]>> {
+  return api.get<AdminTask[]>(`${ADMIN_API_ENDPOINTS.TASKS}/${studentId}`)
+}
+
+/**
+ * Get admin task detail by id
+ */
+export async function getAdminTaskDetail(id: number): Promise<ApiResponse<AdminTask>> {
+  return api.get<AdminTask>(`${ADMIN_API_ENDPOINTS.TASKS}/show/${id}`)
+}
+
+/**
+ * Mark task as complete
+ */
+export async function completeAdminTask(id: number): Promise<ApiResponse<string>> {
+  return api.post<string>(`${ADMIN_API_ENDPOINTS.TASKS}/${id}/complete`)
 }
 
 /**

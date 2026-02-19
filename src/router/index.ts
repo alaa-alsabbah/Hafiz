@@ -217,6 +217,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, requiresRole: 'admin', layout: 'admin' }
   },
   {
+    path: '/admin/tasks',
+    name: 'admin-tasks',
+    component: () => import('@/views/admin/AdminTasksView.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin', layout: 'admin' }
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/login'
   }
