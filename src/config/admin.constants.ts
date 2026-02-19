@@ -145,6 +145,12 @@ export const ADMIN_STUDENTS_PAGE = {
     SUCCESS: 'تم تحديث بيانات الطالب بنجاح',
     LOAD_ERROR: 'فشل تحميل بيانات الطالب',
   },
+  DELETE_CONFIRM: {
+    TITLE: 'تأكيد الحذف',
+    MESSAGE: 'هل أنت متأكد من حذف هذا الطالب؟ لا يمكن التراجع عن هذا الإجراء.',
+    CANCEL: 'إلغاء',
+    DELETE: 'حذف',
+  },
 } as const
 
 // Admin menu item types for hierarchical sidemenu

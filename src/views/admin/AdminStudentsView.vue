@@ -6,7 +6,7 @@ import { ActionMenu, BaseTabs } from '@/components/ui'
 import type { ActionMenuItem } from '@/components/ui/ActionMenu.vue'
 import type { ApiResponse } from '@/services/api'
 import type { Student } from '@/services/teacher.service'
-import { getAdminStudents, getAdminStudent, type AdminStudent, type AdminStudentsData } from '@/services/admin.service'
+import { getAdminStudents, getAdminStudent, deleteAdminStudent, type AdminStudent, type AdminStudentsData } from '@/services/admin.service'
 import { ADMIN_STUDENTS_PAGE } from '@/config/admin.constants'
 import { STUDENT_STATUS_COLORS } from '@/config/teacher.constants'
 
@@ -27,6 +27,9 @@ const assignStudent = ref<AssignStudentPayload | null>(null)
 
 const showEditDialog = ref(false)
 const editStudentId = ref<number | null>(null)
+
+const deleteConfirm = ref<AdminStudent | null>(null)
+const deleteLoading = ref(false)
 
 async function fetchStudents() {
   loading.value = true
@@ -135,6 +138,33 @@ function onEditSuccess() {
   fetchStudents()
 }
 
+function openDeleteConfirm(row: AdminStudent) {
+  deleteConfirm.value = row
+}
+
+function closeDeleteConfirm() {
+  deleteConfirm.value = null
+}
+
+async function confirmDeleteStudent() {
+  const row = deleteConfirm.value
+  if (!row) return
+  deleteLoading.value = true
+  try {
+    const res = await deleteAdminStudent(row.id)
+    if (res.success) {
+      closeDeleteConfirm()
+      fetchStudents()
+    } else {
+      error.value = res.message ?? 'فشل حذف الطالب'
+    }
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'حدث خطأ أثناء الحذف'
+  } finally {
+    deleteLoading.value = false
+  }
+}
+
 async function getStudentForDrawer(id: number): Promise<ApiResponse<Student>> {
   const res = await getAdminStudent(id)
   if (!res.success || !res.data) {
@@ -179,10 +209,10 @@ function getActionItems(row: AdminStudent): ActionMenuItem[] {
   return [
     { id: 'view', label: ADMIN_STUDENTS_PAGE.ACTIONS.VIEW, icon: 'eye', onClick: () => openStudentProfile(row.id) },
     { id: 'assign', label: ADMIN_STUDENTS_PAGE.ACTIONS.ASSIGN, icon: 'user-plus', onClick: () => openAssignDialog(row) },
-    { id: 'edit', label: ADMIN_STUDENTS_PAGE.ACTIONS.EDIT, icon: 'custom', onClick: () => openEditDialog(row) },
+    { id: 'edit', label: ADMIN_STUDENTS_PAGE.ACTIONS.EDIT, icon: 'edit', onClick: () => openEditDialog(row) },
     { id: 'email', label: ADMIN_STUDENTS_PAGE.ACTIONS.EMAIL, icon: 'email', onClick: () => {} },
     { id: 'whatsapp', label: ADMIN_STUDENTS_PAGE.ACTIONS.WHATSAPP, icon: 'whatsapp', onClick: () => {} },
-    { id: 'delete', label: ADMIN_STUDENTS_PAGE.ACTIONS.DELETE, icon: 'custom', onClick: () => {} },
+    { id: 'delete', label: ADMIN_STUDENTS_PAGE.ACTIONS.DELETE, icon: 'trash', onClick: () => openDeleteConfirm(row) },
   ]
 }
 
@@ -404,6 +434,47 @@ onMounted(() => fetchStudents())
         :student-id="editStudentId"
         @success="onEditSuccess"
       />
+
+      <!-- Delete student confirmation -->
+      <Teleport to="body">
+        <Transition name="dialog">
+          <div
+            v-if="deleteConfirm"
+            class="admin-students__delete-overlay"
+            @click.self="closeDeleteConfirm"
+          >
+            <div class="admin-students__delete-dialog">
+              <h3 class="admin-students__delete-title">
+                {{ ADMIN_STUDENTS_PAGE.DELETE_CONFIRM.TITLE }}
+              </h3>
+              <p class="admin-students__delete-message">
+                {{ ADMIN_STUDENTS_PAGE.DELETE_CONFIRM.MESSAGE }}
+              </p>
+              <p v-if="deleteConfirm" class="admin-students__delete-student-name">
+                {{ deleteConfirm.full_name }}
+              </p>
+              <div class="admin-students__delete-actions">
+                <button
+                  type="button"
+                  class="admin-students__delete-btn admin-students__delete-btn--cancel"
+                  :disabled="deleteLoading"
+                  @click="closeDeleteConfirm"
+                >
+                  {{ ADMIN_STUDENTS_PAGE.DELETE_CONFIRM.CANCEL }}
+                </button>
+                <button
+                  type="button"
+                  class="admin-students__delete-btn admin-students__delete-btn--delete"
+                  :disabled="deleteLoading"
+                  @click="confirmDeleteStudent"
+                >
+                  {{ deleteLoading ? 'جاري الحذف...' : ADMIN_STUDENTS_PAGE.DELETE_CONFIRM.DELETE }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
     </template>
   </div>
 </template>
@@ -714,5 +785,110 @@ onMounted(() => fetchStudents())
 @keyframes adminStudentsPulseIcon {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.1); opacity: 0.9; }
+}
+
+.admin-students__delete-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: $spacing-4;
+  direction: rtl;
+}
+
+.admin-students__delete-dialog {
+  background: #fff;
+  border-radius: $radius-xl;
+  padding: $spacing-6;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: $shadow-lg;
+}
+
+.admin-students__delete-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: var(--color-text-primary);
+  margin: 0 0 $spacing-3 0;
+  text-align: right;
+}
+
+.admin-students__delete-message {
+  font-size: $font-size-base;
+  color: var(--color-text-secondary);
+  margin: 0 0 $spacing-2 0;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.admin-students__delete-student-name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: var(--color-primary);
+  margin: 0 0 $spacing-5 0;
+  text-align: right;
+}
+
+.admin-students__delete-actions {
+  display: flex;
+  gap: $spacing-3;
+  justify-content: flex-start;
+}
+
+.admin-students__delete-btn {
+  padding: $spacing-2 $spacing-5;
+  border-radius: $radius-lg;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+  border: none;
+
+  &--cancel {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+
+    &:hover:not(:disabled) {
+      background: #f9fafb;
+    }
+  }
+
+  &--delete {
+    background: #ef4444;
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: #dc2626;
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.dialog-enter-active,
+.dialog-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.dialog-enter-from,
+.dialog-leave-to {
+  opacity: 0;
+}
+
+.dialog-enter-active .admin-students__delete-dialog,
+.dialog-leave-active .admin-students__delete-dialog {
+  transition: transform 0.2s ease;
+}
+
+.dialog-enter-from .admin-students__delete-dialog,
+.dialog-leave-to .admin-students__delete-dialog {
+  transform: scale(0.95);
 }
 </style>

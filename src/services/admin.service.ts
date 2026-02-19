@@ -161,6 +161,14 @@ export async function getAdminStudent(id: number): Promise<ApiResponse<AdminStud
 }
 
 /**
+ * Delete a student
+ * DELETE /admin/students/:id
+ */
+export async function deleteAdminStudent(id: number): Promise<ApiResponse<string>> {
+  return api.delete<string>(`${ADMIN_API_ENDPOINTS.STUDENTS}/${id}`)
+}
+
+/**
  * Update a student
  * POST /admin/students/:id
  */
