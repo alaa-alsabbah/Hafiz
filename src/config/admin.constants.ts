@@ -153,6 +153,43 @@ export const ADMIN_STUDENTS_PAGE = {
   },
 } as const
 
+// التقرير الأسبوعي (Weekly Report) page
+export const ADMIN_WEEKLY_REPORT_PAGE = {
+  PAGE_TITLE: 'التقرير الأسبوعي',
+  SECTION_TITLE: 'نظرة عامة على جميع الطلاب',
+  STATS: {
+    PRESENT: { LABEL: 'الحضور الإجمالي', TAG: 'حاضر', TAG_COLOR: ADMIN_TAG_COLORS.green },
+    ABSENT: { LABEL: 'غياب تام', TAG: 'غائب', TAG_COLOR: ADMIN_TAG_COLORS.red },
+    DELAYED: { LABEL: 'تأخر كامل', TAG: 'مؤجل', TAG_COLOR: ADMIN_TAG_COLORS.yellow },
+    PERMISSION: { LABEL: 'إذن كامل', TAG: 'مستأذن', TAG_COLOR: ADMIN_TAG_COLORS.blue },
+  },
+  FILTERS: {
+    ALL: 'الكل',
+    HEFAZA: 'برنامج حفظة',
+    FURSAN: 'برنامج فرسان',
+    SEARCH_PLACEHOLDER: 'ابحث بالاسم أو البريد الإلكتروني...',
+    ALL_STATUSES: 'جميع الحالات',
+    SELECT_STUDENT: 'اختر طالبا محددًا',
+    EXPORT: 'تصدير',
+    DATE_PLACEHOLDER: 'التاريخ',
+  },
+  TABLE: {
+    STUDENT: 'طالب',
+    PROGRAM: 'البرنامج',
+    SESSION: 'جلسة',
+    STATUS: 'الحالة',
+    LAST_PAGE: 'آخر صفحة تم تسميعها',
+    EVALUATION: 'التقييم',
+    DATE: 'تاريخ',
+    ACTIONS: 'إجراءات',
+  },
+  ACTIONS: {
+    VIEW: 'عرض الطالب',
+    EMAIL: 'إرسال بريد إلكتروني',
+    WHATSAPP: 'إرسال واتساب',
+  },
+} as const
+
 // Admin menu item types for hierarchical sidemenu
 export interface AdminMenuItem {
   label: string

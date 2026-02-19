@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { BaseTable, AppLoading, StudentProfileDrawer, AssignStudentDialog, EditStudentDialog } from '@/components/common'
+import { BaseTable, AppLoading, StudentProfileDrawer, AssignStudentDialog, EditStudentDialog, DataTableFilterBar, KpiStatCard } from '@/components/common'
 import type { AssignStudentPayload } from '@/components/common/AssignStudentDialog.vue'
-import { ActionMenu, BaseTabs } from '@/components/ui'
+import { ActionMenu } from '@/components/ui'
 import type { ActionMenuItem } from '@/components/ui/ActionMenu.vue'
 import type { ApiResponse } from '@/services/api'
 import type { Student } from '@/services/teacher.service'
@@ -55,6 +55,7 @@ const statCards = computed(() => {
   return [
     {
       key: 'total',
+      icon: 'total' as const,
       value: d?.full_counts ?? 0,
       label: ADMIN_STUDENTS_PAGE.STATS.TOTAL.LABEL,
       tag: ADMIN_STUDENTS_PAGE.STATS.TOTAL.TAG,
@@ -63,6 +64,7 @@ const statCards = computed(() => {
     },
     {
       key: 'active',
+      icon: 'active' as const,
       value: d?.active_count ?? 0,
       label: ADMIN_STUDENTS_PAGE.STATS.ACTIVE.LABEL,
       tag: ADMIN_STUDENTS_PAGE.STATS.ACTIVE.TAG,
@@ -71,6 +73,7 @@ const statCards = computed(() => {
     },
     {
       key: 'hefaza',
+      icon: 'hefaza' as const,
       value: d?.hafaza_count ?? 0,
       label: ADMIN_STUDENTS_PAGE.STATS.HEFAZA.LABEL,
       tag: ADMIN_STUDENTS_PAGE.STATS.HEFAZA.TAG,
@@ -79,6 +82,7 @@ const statCards = computed(() => {
     },
     {
       key: 'fursan',
+      icon: 'fursan' as const,
       value: d?.fursan_count ?? 0,
       label: ADMIN_STUDENTS_PAGE.STATS.FURSAN.LABEL,
       tag: ADMIN_STUDENTS_PAGE.STATS.FURSAN.TAG,
@@ -252,110 +256,44 @@ onMounted(() => fetchStudents())
     </div>
 
     <template v-else>
-      <!-- Stats Cards (same design & animation as admin dashboard) -->
+      <!-- Stats Cards -->
       <section class="admin-students__stats">
         <div class="admin-students__stats-grid">
-          <div
-            v-for="card in statCards"
-            :key="card.key"
-            class="admin-students__stat-card-wrapper"
-          >
-            <div class="admin-students__stat-card">
-              <div
-                class="admin-students__stat-icon"
-                :style="{ backgroundColor: card.iconBg }"
-              >
-                <svg
-                  v-if="card.key === 'total'"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-                <svg
-                  v-else-if="card.key === 'active'"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                  <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-                </svg>
-                <svg
-                  v-else
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-              </div>
-              <div class="admin-students__stat-content">
-                <div class="admin-students__stat-value">
-                  <span v-if="loading" class="admin-students__stat-skeleton">---</span>
-                  <span v-else>{{ card.value }}</span>
-                </div>
-                <div class="admin-students__stat-label">{{ card.label }}</div>
-                <div
-                  class="admin-students__stat-tag"
-                  :style="{
-                    backgroundColor: card.tagColor.background,
-                    color: card.tagColor.text,
-                  }"
-                >
-                  {{ card.tag }}
-                </div>
-              </div>
-            </div>
+          <div v-for="card in statCards" :key="card.key" class="admin-students__stat-card-wrapper">
+            <KpiStatCard
+              :value="card.value"
+              :label="card.label"
+              :tag="card.tag"
+              :icon="card.icon"
+              :icon-bg="card.iconBg"
+              :tag-color="card.tagColor"
+              :loading="loading"
+            />
           </div>
         </div>
       </section>
 
-      <!-- Filters & Actions Bar -->
-      <div class="admin-students__toolbar">
-        <div class="admin-students__program-filters">
-          <BaseTabs v-model="programFilter" :tabs="programTabs" />
-        </div>
-        <div class="admin-students__toolbar-right">
-          <div class="admin-students__search-wrap">
-            <input
-              v-model="searchQuery"
-              type="search"
-              class="admin-students__search"
-              :placeholder="ADMIN_STUDENTS_PAGE.FILTERS.SEARCH_PLACEHOLDER"
-            />
-          </div>
-          <select v-model="statusFilter" class="admin-students__select">
-            <option value="">{{ ADMIN_STUDENTS_PAGE.FILTERS.ALL_STATUSES }}</option>
-          </select>
-          <select v-model="studentFilter" class="admin-students__select">
-            <option value="">{{ ADMIN_STUDENTS_PAGE.FILTERS.SELECT_STUDENT }}</option>
-          </select>
-          <button type="button" class="admin-students__export-btn">
-            {{ ADMIN_STUDENTS_PAGE.FILTERS.EXPORT }}
-          </button>
-        </div>
-      </div>
+      <!-- Filters Bar -->
+      <DataTableFilterBar
+        :program-tabs="programTabs"
+        :program-model-value="programFilter"
+        @update:program-model-value="programFilter = ($event ?? 'all') as 'all' | number"
+        :search-placeholder="ADMIN_STUDENTS_PAGE.FILTERS.SEARCH_PLACEHOLDER"
+        :search-model-value="searchQuery"
+        @update:search-model-value="searchQuery = $event"
+        :status-options="[]"
+        :status-all-label="ADMIN_STUDENTS_PAGE.FILTERS.ALL_STATUSES"
+        :status-model-value="statusFilter"
+        @update:status-model-value="statusFilter = $event"
+        :student-options="[]"
+        :student-placeholder="ADMIN_STUDENTS_PAGE.FILTERS.SELECT_STUDENT"
+        :student-model-value="studentFilter"
+        @update:student-model-value="studentFilter = $event"
+        :show-date="false"
+        :show-export="true"
+        :export-label="ADMIN_STUDENTS_PAGE.FILTERS.EXPORT"
+        class="admin-students__filter-bar"
+      />
 
       <!-- Table -->
       <div class="admin-students__table-section">
@@ -548,161 +486,8 @@ onMounted(() => fetchStudents())
     position: relative;
   }
 
-  &__stat-card {
-    background-color: var(--color-background-card);
-    border-radius: $radius-xl;
-    padding: $spacing-3;
-    box-shadow: $shadow-md;
-    min-height: 140px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    position: relative;
-    overflow: visible;
-  }
-
-  &__stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: $radius-lg;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: $shadow-sm;
-    position: absolute;
-    top: $spacing-10;
-    left: $spacing-4;
-    z-index: 2;
-    animation: adminStudentsFloatIcon 3s ease-in-out infinite;
-    transition: transform $transition-fast;
-
-    &:hover {
-      transform: scale(1.1) rotate(5deg);
-      animation-play-state: paused;
-    }
-
-    svg {
-      width: 24px;
-      height: 24px;
-      object-fit: contain;
-      animation: adminStudentsPulseIcon 2s ease-in-out infinite;
-    }
-  }
-
-  &__stat-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-2;
-    margin-top: $spacing-7;
-  }
-
-  &__stat-value {
-    font-size: $font-size-xl;
-    font-weight: $font-weight-bold;
-    color: var(--color-text-primary);
-  }
-
-  &__stat-skeleton {
-    color: var(--color-text-muted);
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-
-  &__stat-label {
-    font-size: $font-size-sm;
-    color: var(--color-text-secondary);
-    font-weight: $font-weight-medium;
-  }
-
-  &__stat-tag {
-    display: inline-block;
-    padding: $spacing-1 $spacing-3;
-    border-radius: $radius-md;
-    font-size: $font-size-sm;
-    font-weight: $font-weight-medium;
-    align-self: flex-start;
-  }
-
-  &__toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: $spacing-4;
+  &__filter-bar {
     margin-bottom: $spacing-6;
-
-    @include sm-max {
-      flex-direction: column;
-      align-items: stretch;
-    }
-  }
-
-  &__program-filters {
-    display: flex;
-    min-width: 0;
-
-    .base-tabs {
-      min-width: 350px;
-
-      @include sm-max {
-        min-width: 0;
-        width: 100%;
-      }
-    }
-  }
-
-  &__toolbar-right {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: $spacing-3;
-    margin-right: auto;
-
-    @include sm-max {
-      margin-right: 0;
-    }
-  }
-
-  &__search-wrap {
-    flex: 1;
-    min-width: 200px;
-  }
-
-  &__search {
-    width: 100%;
-    padding: $spacing-2 $spacing-4;
-    border-radius: $radius-md;
-    border: 1px solid var(--color-border);
-    background: var(--color-background-card);
-    font-size: $font-size-sm;
-    color: var(--color-text-primary);
-
-    &::placeholder {
-      color: var(--color-text-muted);
-    }
-  }
-
-  &__select {
-    padding: $spacing-2 $spacing-4;
-    border-radius: $radius-md;
-    border: 1px solid var(--color-border);
-    background: var(--color-background-card);
-    font-size: $font-size-sm;
-    color: var(--color-text-primary);
-    min-width: 140px;
-  }
-
-  &__export-btn {
-    padding: $spacing-2 $spacing-4;
-    border-radius: $radius-md;
-    border: none;
-    background: var(--color-primary);
-    color: #fff;
-    font-size: $font-size-sm;
-    font-weight: $font-weight-medium;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: $spacing-2;
   }
 
   &__table-section {
@@ -775,16 +560,6 @@ onMounted(() => fetchStudents())
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
-}
-
-@keyframes adminStudentsFloatIcon {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
-@keyframes adminStudentsPulseIcon {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.9; }
 }
 
 .admin-students__delete-overlay {

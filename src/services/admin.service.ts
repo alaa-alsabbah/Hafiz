@@ -5,6 +5,7 @@ import { api, type ApiResponse } from './api'
 const ADMIN_API_ENDPOINTS = {
   DASHBOARD: '/admin/dashboard',
   STUDENTS: '/admin/students',
+  ATTENDANCES: '/admin/attendances',
   WEEKLY_REPORT: '/admin/weekly-report',
   PRESENTATION_TEST: '/admin/presentation-test',
   PERMISSION: '/admin/permission',
@@ -191,6 +192,44 @@ export async function assignStudentToTeacher(
     `${ADMIN_API_ENDPOINTS.STUDENTS}/${studentId}/assign-teacher`,
     { teacher_id: teacherId }
   )
+}
+
+/** Admin attendances (weekly report) - single attendance record */
+export interface AdminAttendance {
+  id: number
+  student_id?: number
+  full_name: string
+  program_track: string
+  program: string
+  status: string
+  date: string
+  session: string
+  score: number
+  page_number: number | null
+  created_at: string
+}
+
+export interface AdminAttendancesCounts {
+  present_count: number
+  delayed_count: number
+  absent_count: number
+  permission_count: number
+}
+
+export interface AdminAttendancesData {
+  counts: AdminAttendancesCounts
+  data: AdminAttendance[]
+}
+
+/**
+ * Get admin attendances (weekly report) with optional program filter
+ * @param programId - optional, e.g. 1 for حفظة, 2 for فرسان
+ */
+export async function getAdminAttendances(
+  programId?: number
+): Promise<ApiResponse<AdminAttendancesData>> {
+  const params = programId != null ? { program_id: String(programId) } : undefined
+  return api.get<AdminAttendancesData>(ADMIN_API_ENDPOINTS.ATTENDANCES, params)
 }
 
 /**

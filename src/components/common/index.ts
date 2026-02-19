@@ -6,6 +6,8 @@ export { default as RequestPermissionDialog } from './RequestPermissionDialog.vu
 export { default as PageToolbar } from './PageToolbar.vue'
 export { default as BaseTable } from './BaseTable.vue'
 export { default as BaseFilter } from './BaseFilter.vue'
+export { default as DataTableFilterBar } from './DataTableFilterBar.vue'
+export { default as KpiStatCard } from './KpiStatCard.vue'
 export { default as DataTable } from './DataTable.vue'
 export { default as AttendanceReportTable } from './AttendanceReportTable.vue'
 export { default as StudentProfileDrawer } from './StudentProfileDrawer.vue'
