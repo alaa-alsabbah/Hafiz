@@ -254,6 +254,46 @@ export const ADMIN_TASKS_PAGE = {
   PROGRAM_TRACK: 'المسار',
 } as const
 
+// تقييمات المقابلات (Interview Evaluations) page
+export const ADMIN_EVALUATIONS_PAGE = {
+  PAGE_TITLE: 'تقييمات المقابلات',
+  PENDING_LIST_TITLE: 'المقابلات المعلقة',
+  SCHEDULE_BANNER: 'جدول المقابلات',
+  CANDIDATE_INFO: 'معلومات المرشح',
+  STATUS_ACTIVE: 'نشط',
+  RECITATION_EVAL: 'تقييم مسار التلاوة',
+  RECITATION_EVAL_DESC: 'تقييم الملاءمة لمسارهم المختار: مسار الحافظ',
+  EVAL_NOTES: 'ملاحظات وتعليقات التقييم',
+  EVAL_NOTES_DESC: 'توثيق ملاحظات المقابلة، نقاط القوة، والتوصيات',
+  UNRATED: 'غير مصنف',
+  SCORE_LABEL: 'الدرجة',
+  REJECT: 'رفض الطلب',
+  APPROVE: 'الموافقة وقبول المرشح',
+  LABELS: {
+    GENDER: 'الجنس',
+    COUNTRY: 'بلد الإقامة',
+    AGE: 'العمر',
+    EMAIL: 'البريد الإلكتروني',
+    RESIDENCE: 'مكان الإقامة',
+    INTERVIEW_TIME: 'الوقت المناسب للمقابلة',
+    PROGRAM: 'البرنامج',
+    HOW_KNEW: 'كيف سمعت عن البرنامج',
+    PHONE: 'رقم الهاتف على واتساب',
+    EDUCATION: 'المستوى التعليمي',
+    PROFESSION: 'المهنة',
+    QURAN_PARTS: 'كم جزء من كتاب الله تحفظ؟',
+    WATCHED_VIDEO: 'شاهدت الفيديو التقديمي للبرنامجين',
+    HAS_IJAZA: 'رخصة أو شهادة في القرآن الكريم',
+    TRACK: 'أي مسار تود المشاركة فيه؟',
+    CURRENT_LEVEL: 'المستوى الحالي',
+    TEACHER: 'المعلم المعين',
+    START_DATE: 'تاريخ البدء',
+  },
+  EMPTY: 'لا توجد مقابلات معلقة',
+  SELECT_PROMPT: 'اختر مقابلة لعرض التفاصيل',
+  NOTES_PLACEHOLDER: 'مثال : يظهر المرشح أساسيات التجويد القوية مع نطق واضح يظهر التفاني من خلال الممارسة المستمرة، أوصى بالقبول في مسار الحافظ مع التركيز على تقنيات الحفظ.',
+} as const
+
 // الاستئذان (Permission/Leaves) page
 export const ADMIN_PERMISSION_PAGE = {
   PAGE_TITLE: 'الاستئذان',

@@ -13,6 +13,7 @@ const ADMIN_API_ENDPOINTS = {
   PRESENTATION_TEST: '/admin/presentation-test',
   PERMISSION: '/admin/permission',
   EVALUATIONS: '/admin/evaluations',
+  INTERVIEWS: '/admin/interviews',
   TEACHERS: '/admin/teachers',
 }
 
@@ -342,6 +343,66 @@ export async function getAdminTaskDetail(id: number): Promise<ApiResponse<AdminT
  */
 export async function completeAdminTask(id: number): Promise<ApiResponse<string>> {
   return api.post<string>(`${ADMIN_API_ENDPOINTS.TASKS}/${id}/complete`)
+}
+
+/** Admin interview - single record */
+export interface AdminInterview {
+  id: number
+  scheduled_at: string
+  full_name: string
+  email: string
+  country: string | null
+  gender: string | null
+  age: string | number | null
+  education_level: string | null
+  how_did_you_know_us: string | null
+  phone_number: string
+  residence: string | null
+  quran_memorization_level: string | null
+  has_ijaza: string | null
+  watched_intro_video: string | null
+  interview_time_preference: string | null
+  interview_date: string | null
+  score: number
+  level: string | null
+  program: string
+  program_track: string
+  teacher: string | null
+  created_at: string
+}
+
+/**
+ * Get admin interviews (pending)
+ */
+export async function getAdminInterviews(): Promise<ApiResponse<AdminInterview[]>> {
+  return api.get<AdminInterview[]>(ADMIN_API_ENDPOINTS.INTERVIEWS)
+}
+
+/**
+ * Get admin interview by id
+ */
+export async function getAdminInterview(id: number): Promise<ApiResponse<AdminInterview>> {
+  return api.get<AdminInterview>(`${ADMIN_API_ENDPOINTS.INTERVIEWS}/${id}`)
+}
+
+/** Payload for approve/reject interview */
+export interface ApproveRejectInterviewPayload {
+  score: number
+  notes: string
+}
+
+/**
+ * Approve or reject interview
+ * @param id - interview id
+ * @param isApprove - 1 for approve, 0 for reject
+ * @param payload - body with score (any range) and notes (any text)
+ */
+export async function approveRejectInterview(
+  id: number,
+  isApprove: 0 | 1,
+  payload: ApproveRejectInterviewPayload
+): Promise<ApiResponse<string>> {
+  return api.post<string>(`${ADMIN_API_ENDPOINTS.INTERVIEWS}/${id}/${isApprove}`, payload)
 }
 
 /**
