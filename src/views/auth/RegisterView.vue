@@ -329,10 +329,22 @@ async function fetchAllLookups() {
   }
 }
 
-// Helper functions
-function getLookupId(lookupName: string, key: string): number | null {
+// Helper: get the value we use for form binding (support both key and code from API)
+function getLookupOptionValue(item: LookupItem): string {
+  return (item.key ?? item.code ?? '').trim() || String(item.id)
+}
+
+// Helper functions - match by key, code, or value_ar so production API response displays correctly
+function getLookupId(lookupName: string, formValue: string): number | null {
+  if (!formValue) return null
   const items = lookups.value[lookupName] || []
-  const item = items.find((i) => i.key === key)
+  const item = items.find(
+    (i) =>
+      i.key === formValue ||
+      i.code === formValue ||
+      (i.value_ar && i.value_ar === formValue) ||
+      (i.value_en && i.value_en === formValue)
+  )
   return item ? item.id : null
 }
 
@@ -609,9 +621,10 @@ function getAvailableTimes(): Array<{ time: string; value: string; label: string
   
   const preference = lookups.value.interview_time_preference.find((p: any) => p.key === studentStep3Form.interviewTime)
   if (!preference) return times
-  
-  const isMorning = preference.value_ar.includes('صباح') || preference.value_ar.includes('صباحاً')
-  const isEvening = preference.value_ar.includes('مساء') || preference.value_ar.includes('مساءً')
+
+  const valueAr = preference.value_ar ?? preference.value_en ?? ''
+  const isMorning = valueAr.includes('صباح') || valueAr.includes('صباحاً')
+  const isEvening = valueAr.includes('مساء') || valueAr.includes('مساءً')
   
   if (isMorning) {
     for (let h = 8; h <= 12; h++) {
@@ -820,10 +833,10 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': studentForm.gender === item.key }"
-                    @click="studentForm.gender = item.key"
+                    :class="{ 'register-view__segmented-btn--active': studentForm.gender === getLookupOptionValue(item) }"
+                    @click="studentForm.gender = getLookupOptionValue(item)"
                   >
-                    {{ item.value_ar }}
+                    {{ item.value_ar || item.value_en }}
                   </button>
                 </div>
                 <p v-if="studentErrors.gender" class="register-view__field-error">{{ studentErrors.gender }}</p>
@@ -862,10 +875,10 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': studentForm.educationalLevel === item.key }"
-                    @click="studentForm.educationalLevel = item.key"
+                    :class="{ 'register-view__segmented-btn--active': studentForm.educationalLevel === getLookupOptionValue(item) }"
+                    @click="studentForm.educationalLevel = getLookupOptionValue(item)"
                   >
-                    {{ item.value_ar }}
+                    {{ item.value_ar || item.value_en }}
                   </button>
                 </div>
                 <p v-if="studentErrors.educationalLevel" class="register-view__field-error">{{ studentErrors.educationalLevel }}</p>
@@ -896,10 +909,10 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': studentForm.howDidYouHear === item.key }"
-                    @click="studentForm.howDidYouHear = item.key"
+                    :class="{ 'register-view__segmented-btn--active': studentForm.howDidYouHear === getLookupOptionValue(item) }"
+                    @click="studentForm.howDidYouHear = getLookupOptionValue(item)"
                   >
-                    {{ item.value_ar }}
+                    {{ item.value_ar || item.value_en }}
                   </button>
                 </div>
                 <p v-if="studentErrors.howDidYouHear" class="register-view__field-error">{{ studentErrors.howDidYouHear }}</p>
@@ -989,8 +1002,8 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': studentStep3Form.quranMemorizationLevel === item.key }"
-                    @click="studentStep3Form.quranMemorizationLevel = item.key"
+                    :class="{ 'register-view__segmented-btn--active': studentStep3Form.quranMemorizationLevel === getLookupOptionValue(item) }"
+                    @click="studentStep3Form.quranMemorizationLevel = getLookupOptionValue(item)"
                   >
                     {{ item.value_ar }}
                   </button>
@@ -1015,8 +1028,8 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': studentStep3Form.ijazahOrSanad === item.key }"
-                    @click="studentStep3Form.ijazahOrSanad = item.key"
+                    :class="{ 'register-view__segmented-btn--active': studentStep3Form.ijazahOrSanad === getLookupOptionValue(item) }"
+                    @click="studentStep3Form.ijazahOrSanad = getLookupOptionValue(item)"
                   >
                     {{ item.value_ar }}
                   </button>
@@ -1035,8 +1048,8 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': studentStep3Form.watchedIntroVideo === item.key }"
-                    @click="studentStep3Form.watchedIntroVideo = item.key"
+                    :class="{ 'register-view__segmented-btn--active': studentStep3Form.watchedIntroVideo === getLookupOptionValue(item) }"
+                    @click="studentStep3Form.watchedIntroVideo = getLookupOptionValue(item)"
                   >
                     {{ item.value_ar }}
                   </button>
@@ -1055,8 +1068,8 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn register-view__segmented-btn--full"
-                    :class="{ 'register-view__segmented-btn--active': studentStep3Form.desiredPath === item.key }"
-                    @click="studentStep3Form.desiredPath = item.key"
+                    :class="{ 'register-view__segmented-btn--active': studentStep3Form.desiredPath === getLookupOptionValue(item) }"
+                    @click="studentStep3Form.desiredPath = getLookupOptionValue(item)"
                   >
                     {{ item.value_ar }}
                   </button>
@@ -1074,8 +1087,8 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': studentStep3Form.interviewTime === item.key }"
-                    @click="studentStep3Form.interviewTime = item.key"
+                    :class="{ 'register-view__segmented-btn--active': studentStep3Form.interviewTime === getLookupOptionValue(item) }"
+                    @click="studentStep3Form.interviewTime = getLookupOptionValue(item)"
                   >
                     {{ item.value_ar }}
                   </button>
@@ -1340,8 +1353,8 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': teacherForm.memorizedQuranCompletely === item.key }"
-                    @click="teacherForm.memorizedQuranCompletely = item.key"
+                    :class="{ 'register-view__segmented-btn--active': teacherForm.memorizedQuranCompletely === getLookupOptionValue(item) }"
+                    @click="teacherForm.memorizedQuranCompletely = getLookupOptionValue(item)"
                   >
                     {{ item.value_ar }}
                   </button>
@@ -1359,8 +1372,8 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': teacherForm.gender === item.key }"
-                    @click="teacherForm.gender = item.key"
+                    :class="{ 'register-view__segmented-btn--active': teacherForm.gender === getLookupOptionValue(item) }"
+                    @click="teacherForm.gender = getLookupOptionValue(item)"
                   >
                     {{ item.value_ar }}
                   </button>
@@ -1384,10 +1397,10 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': teacherForm.educationalLevel === item.key }"
-                    @click="teacherForm.educationalLevel = item.key"
+                    :class="{ 'register-view__segmented-btn--active': teacherForm.educationalLevel === getLookupOptionValue(item) }"
+                    @click="teacherForm.educationalLevel = getLookupOptionValue(item)"
                   >
-                    {{ item.value_ar }}
+                    {{ item.value_ar || item.value_en }}
                   </button>
                 </div>
                 <p v-if="teacherErrors.educationalLevel" class="register-view__field-error">{{ teacherErrors.educationalLevel }}</p>
@@ -1410,10 +1423,10 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': teacherForm.howDidYouHear === item.key }"
-                    @click="teacherForm.howDidYouHear = item.key"
+                    :class="{ 'register-view__segmented-btn--active': teacherForm.howDidYouHear === getLookupOptionValue(item) }"
+                    @click="teacherForm.howDidYouHear = getLookupOptionValue(item)"
                   >
-                    {{ item.value_ar }}
+                    {{ item.value_ar || item.value_en }}
                   </button>
                 </div>
                 <p v-if="teacherErrors.howDidYouHear" class="register-view__field-error">{{ teacherErrors.howDidYouHear }}</p>
@@ -1477,8 +1490,8 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': teacherStep2Form.masteryPercentage === item.key }"
-                    @click="teacherStep2Form.masteryPercentage = item.key"
+                    :class="{ 'register-view__segmented-btn--active': teacherStep2Form.masteryPercentage === getLookupOptionValue(item) }"
+                    @click="teacherStep2Form.masteryPercentage = getLookupOptionValue(item)"
                   >
                     {{ item.value_ar }}
                   </button>
@@ -1502,8 +1515,8 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': teacherStep2Form.hasIjaza === item.key }"
-                    @click="teacherStep2Form.hasIjaza = item.key"
+                    :class="{ 'register-view__segmented-btn--active': teacherStep2Form.hasIjaza === getLookupOptionValue(item) }"
+                    @click="teacherStep2Form.hasIjaza = getLookupOptionValue(item)"
                   >
                     {{ item.value_ar }}
                   </button>
@@ -1524,8 +1537,8 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': teacherStep2Form.experienceYears === item.key }"
-                    @click="teacherStep2Form.experienceYears = item.key"
+                    :class="{ 'register-view__segmented-btn--active': teacherStep2Form.experienceYears === getLookupOptionValue(item) }"
+                    @click="teacherStep2Form.experienceYears = getLookupOptionValue(item)"
                   >
                     {{ item.value_ar }}
                   </button>
@@ -1543,8 +1556,8 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': teacherStep2Form.volunteer === item.key }"
-                    @click="teacherStep2Form.volunteer = item.key"
+                    :class="{ 'register-view__segmented-btn--active': teacherStep2Form.volunteer === getLookupOptionValue(item) }"
+                    @click="teacherStep2Form.volunteer = getLookupOptionValue(item)"
                   >
                     {{ item.value_ar }}
                   </button>
@@ -1562,8 +1575,8 @@ watch(selectedRole, (role) => {
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn"
-                    :class="{ 'register-view__segmented-btn--active': teacherStep2Form.interviewTime === item.key }"
-                    @click="teacherStep2Form.interviewTime = item.key"
+                    :class="{ 'register-view__segmented-btn--active': teacherStep2Form.interviewTime === getLookupOptionValue(item) }"
+                    @click="teacherStep2Form.interviewTime = getLookupOptionValue(item)"
                   >
                     {{ item.value_ar }}
                   </button>

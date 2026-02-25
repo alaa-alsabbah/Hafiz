@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { AppLoading } from '@/components/common'
 import { BaseTabs } from '@/components/ui'
 import {

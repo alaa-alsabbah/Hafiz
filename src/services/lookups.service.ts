@@ -19,13 +19,13 @@ export const LOOKUP_GROUPS = {
 
 export type LookupGroup = typeof LOOKUP_GROUPS[keyof typeof LOOKUP_GROUPS]
 
-// Lookup item structure returned by API
+// Lookup item structure returned by API (key/code may vary by environment)
 export interface LookupItem {
   id: number
-  code: string
-  key: string
-  value_en: string
-  value_ar: string
+  code?: string
+  key?: string
+  value_en?: string
+  value_ar?: string
 }
 
 // Cache for lookups to avoid redundant API calls

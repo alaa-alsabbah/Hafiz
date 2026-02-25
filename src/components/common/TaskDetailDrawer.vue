@@ -34,7 +34,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
 
 const statusStyle = computed(() => {
   const s = task.value?.status
-  const c = (s && STATUS_COLORS[s]) ?? { bg: 'rgba(245, 245, 245, 1)', text: '#616161' }
+  const c = (s && STATUS_COLORS[s]) || { bg: 'rgba(245, 245, 245, 1)', text: '#616161' }
   return { backgroundColor: c.bg, color: c.text }
 })
 
