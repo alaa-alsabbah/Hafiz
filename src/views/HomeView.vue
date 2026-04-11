@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import bgVideoImage from '@/assets/img/bgVedio.png'
+import { computed, ref } from 'vue'
 import childImage from '@/assets/img/child.png'
 import humanImage from '@/assets/img/human.png'
 import wordImage from '@/assets/img/word.png'
@@ -8,6 +7,15 @@ import hiUserImage from '@/assets/img/hiUser.png'
 import RegistrationTypeDialog from '@/components/common/RegistrationTypeDialog.vue'
 const selectedProgram = ref<'hafiz' | 'fursan'>('hafiz')
 const showRegistrationDialog = ref(false)
+
+const heroYoutubeIds: Record<'hafiz' | 'fursan', string> = {
+  hafiz: 'NmREcAuCJio',
+  fursan: 'HQVYzuY_HqY'
+}
+
+const heroEmbedUrl = computed(
+  () => `https://www.youtube.com/embed/${heroYoutubeIds[selectedProgram.value]}`
+)
 
 function openRegistrationDialog() {
   showRegistrationDialog.value = true
@@ -149,13 +157,14 @@ const features = [
         </div>
         <div class="hero__visual">
           <div class="hero__video-wrapper">
-            <img :src="bgVideoImage" alt="حافظ" class="hero__video-bg" />
-            <button class="hero__play-btn">
-              <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="12" cy="12" r="11" fill="white" opacity="0.9" />
-                <polygon points="9 7 17 12 9 17 9 7" fill="#1B7A4E" />
-              </svg>
-            </button>
+            <iframe
+              :key="selectedProgram"
+              class="hero__video-embed"
+              :src="heroEmbedUrl"
+              :title="selectedProgram === 'hafiz' ? 'حفظة' : 'فرسان'"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+            />
           </div>
           <div
             v-for="stat in stats"
@@ -435,26 +444,12 @@ const features = [
     align-items: center;
   }
 
-  &__video-bg {
+  &__video-embed {
     width: 100%;
-    height: auto;
-    border-radius: $radius-xl;
-  }
-
-  &__play-btn {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: none;
+    aspect-ratio: 16 / 9;
     border: none;
-    cursor: pointer;
-    transition: all $transition-fast;
-    z-index: 2;
-
-    &:hover {
-      transform: translate(-50%, -50%) scale(1.1);
-    }
+    border-radius: $radius-xl;
+    background: #000;
   }
 
   &__stat {

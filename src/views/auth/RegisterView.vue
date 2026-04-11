@@ -4,7 +4,6 @@ import { useRouter, useRoute } from 'vue-router'
 import { useValidation, rules } from '@/composables/useValidation'
 import { BaseInput, BaseButton, BaseCheckbox, BaseDatePicker, BasePhoneInput } from '@/components/ui'
 import { IconArrowRight } from '@/components/icons'
-import bgVideoImage from '@/assets/img/bgVedio.png'
 import { api, ApiException } from '@/services/api'
 import { translateErrorCode, translateErrorCodes } from '@/utils/errorTranslations'
 import {
@@ -51,6 +50,16 @@ const currentStep = ref(1)
 
 // Video tab selection - initialize with first program if available
 const selectedProgram = ref<string>('hafiz')
+
+const programYoutubeIds: Record<string, string> = {
+  hafiz: 'NmREcAuCJio',
+  fursan: 'HQVYzuY_HqY'
+}
+
+const registerVideoEmbedUrl = computed(() => {
+  const id = programYoutubeIds[selectedProgram.value] ?? programYoutubeIds.hafiz
+  return `https://www.youtube.com/embed/${id}`
+})
 
 // Terms agreement checkbox
 const watchedVideoAndAgreed = ref(false)
@@ -753,17 +762,14 @@ watch(selectedRole, (role) => {
               </div>
 
               <div class="register-view__video-player">
-                <img
-                  :src="bgVideoImage"
-                  alt="Video thumbnail"
-                  class="register-view__video-thumbnail"
+                <iframe
+                  :key="selectedProgram"
+                  class="register-view__video-embed"
+                  :src="registerVideoEmbedUrl"
+                  :title="selectedProgram === 'fursan' ? 'فرسان' : 'حفظة'"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen
                 />
-                <button class="register-view__video-play-btn">
-                  <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="11" fill="white" opacity="0.9" />
-                    <polygon points="9 7 17 12 9 17 9 7" fill="#1B7A4E" />
-                  </svg>
-                </button>
               </div>
             </div>
 
@@ -1875,40 +1881,15 @@ watch(selectedRole, (role) => {
   width: 100%;
   border-radius: 1rem;
   overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(circle at 20% 30%, rgba(27, 122, 78, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(27, 122, 78, 0.1) 0%, transparent 50%);
-    pointer-events: none;
-  }
 }
 
-.register-view__video-thumbnail {
+.register-view__video-embed {
   width: 100%;
-  height: auto;
-  border-radius: 0.75rem;
-  display: block;
-  position: relative;
-  z-index: 1;
-}
-
-.register-view__video-play-btn {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: none;
+  aspect-ratio: 16 / 9;
   border: none;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  z-index: 2;
-
-  &:hover {
-    transform: translate(-50%, -50%) scale(1.1);
-  }
+  border-radius: 0.75rem;
+  background: #000;
+  display: block;
 }
 
 .register-view__conditions {
