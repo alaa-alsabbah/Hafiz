@@ -34,6 +34,13 @@ export const STUDENT_LEVEL_TABLE_LABELS = {
   ACTION: 'عمل',
 } as const
 
+/** Student registration: program track list (lookup key excluded from selectable options) */
+export const REGISTER_STUDENT_HIDDEN_PROGRAM_TRACK_KEY = 'one_years_silver'
+
+/** Shown above program track choices on step 3 */
+export const REGISTER_STUDENT_PROGRAM_TRACK_NOTICE =
+  'ملاحظة: برنامج فرسان (المسار الفضي في ست سنوات (مغلق) - يفتح بعد اجتياز المستوى الثاني (جزء تبارك))'
+
 export const STUDENT_MENU_ITEMS = [
   {
     label: STUDENT_LABELS.PAGE_TITLE,

@@ -16,6 +16,10 @@ import {
   type RegistrationConfig,
 } from '@/services/registration.service'
 import RegistrationTypeDialog from '@/components/common/RegistrationTypeDialog.vue'
+import {
+  REGISTER_STUDENT_HIDDEN_PROGRAM_TRACK_KEY,
+  REGISTER_STUDENT_PROGRAM_TRACK_NOTICE,
+} from '@/config/student.constants'
 
 const router = useRouter()
 const route = useRoute()
@@ -133,6 +137,12 @@ const interviewDateMinStr = computed(() => {
   t.setDate(t.getDate() + 1)
   t.setHours(0, 0, 0, 0)
   return formatYmdLocal(t)
+})
+
+/** Program track options for students — hide closed paths still returned by lookups API */
+const studentProgramTrackOptions = computed(() => {
+  const list = lookups.value.program_track || []
+  return list.filter((item) => (item.key || '').trim() !== REGISTER_STUDENT_HIDDEN_PROGRAM_TRACK_KEY)
 })
 
 /** "أخرى / other" — needs free-text when API uses empty key/code (resolved by id) */
@@ -1213,9 +1223,12 @@ watch(selectedRole, (role) => {
                   المسار الذي ترغب بالمشاركة فيه ؟ <span class="register-view__required">*</span>
                 </label>
                 <p v-if="registrationConfig.student?.field_hints?.program_track" class="register-view__field-hint">{{ registrationConfig.student.field_hints.program_track }}</p>
+                <p class="register-view__program-track-notice">
+                  {{ REGISTER_STUDENT_PROGRAM_TRACK_NOTICE }}
+                </p>
                 <div class="register-view__segmented-buttons register-view__segmented-buttons--vertical">
                   <button
-                    v-for="item in lookups.program_track"
+                    v-for="item in studentProgramTrackOptions"
                     :key="item.id"
                     type="button"
                     class="register-view__segmented-btn register-view__segmented-btn--full"
@@ -2227,6 +2240,15 @@ watch(selectedRole, (role) => {
   margin: 0;
   margin-bottom: 0.5rem;
   font-style: italic;
+}
+
+.register-view__program-track-notice {
+  font-style: normal;
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  margin-bottom: $spacing-3;
 }
 
 .register-view__field-error {
