@@ -7,7 +7,7 @@ import { ApiException } from '@/services/api'
 
 const loading = ref(true)
 const error = ref<string | null>(null)
-const levels = ref<StudentLevel[]>([])
+const currentLevel = ref<StudentLevel | null>(null)
 
 const isDialogOpen = ref(false)
 const dialogLoading = ref(false)
@@ -21,25 +21,31 @@ const columns = [
   { key: 'action', label: STUDENT_LEVEL_TABLE_LABELS.ACTION, align: 'center' as const, width: '100px' },
 ]
 
-const tableData = computed(() =>
-  levels.value.map((level) => ({
-    ...level,
-    description: level.description ?? '---',
-    created_at: level.created_at,
-    action: 'download',
-  }))
-)
+/** One row for shared DataTable when API returns a single level object */
+const tableData = computed(() => {
+  const level = currentLevel.value
+  if (!level) return []
+  return [
+    {
+      ...level,
+      description: level.description ?? '---',
+      created_at: level.created_at,
+      action: 'download',
+    },
+  ]
+})
 
-async function fetchLevels() {
+async function fetchLevel() {
   try {
     loading.value = true
     error.value = null
     const response = await getStudentLevels()
 
     if (response.success && response.data) {
-      levels.value = response.data
+      currentLevel.value = response.data
     } else {
-      error.value = response.message || 'فشل تحميل بيانات المستويات'
+      currentLevel.value = null
+      error.value = response.message || 'فشل تحميل بيانات المستوى'
     }
   } catch (err) {
     if (err instanceof ApiException) {
@@ -47,14 +53,14 @@ async function fetchLevels() {
     } else {
       error.value = 'حدث خطأ غير متوقع'
     }
-    console.error('Student levels fetch error:', err)
+    console.error('Student level fetch error:', err)
   } finally {
     loading.value = false
   }
 }
 
 onMounted(() => {
-  fetchLevels()
+  fetchLevel()
 })
 
 async function openLevelDetails(row: StudentLevel) {
@@ -91,7 +97,6 @@ async function handleExport(row: StudentLevel) {
     const response = await exportStudentLevel(row.id)
 
     if (response.success && response.data) {
-      // Open exported level in a new tab/window
       window.open(response.data, '_blank')
     } else {
       error.value = response.message || 'فشل تحميل ملف المستوى'
@@ -119,7 +124,7 @@ async function handleExport(row: StudentLevel) {
 
     <div class="student-level-details__content">
       <AppLoading
-        v-if="loading && !levels.length && !error"
+        v-if="loading && !tableData.length && !error"
         :full-screen="false"
         size="md"
         text="جاري تحميل تفاصيل المستويات..."
@@ -162,7 +167,7 @@ async function handleExport(row: StudentLevel) {
                     stroke-linejoin="round"
                   />
                 </svg>
-                <span v-else class="student-level-details__action-spinner"></span>
+                <span v-else class="student-level-details__action-spinner" />
               </button>
             </template>
           </DataTable>
@@ -170,7 +175,6 @@ async function handleExport(row: StudentLevel) {
       </template>
     </div>
 
-    <!-- Level details dialog -->
     <div
       v-if="isDialogOpen"
       class="student-level-details__dialog-backdrop"
@@ -227,7 +231,12 @@ async function handleExport(row: StudentLevel) {
   }
 
   &__content {
-    // Card styling now handled by shared DataTable component
+    width: 100%;
+
+    :deep(.base-table__table) {
+      border-radius: $radius-xl;
+      overflow: hidden;
+    }
   }
 
   &__error {

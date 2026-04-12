@@ -90,10 +90,10 @@ export async function completeTask(taskId: number): Promise<ApiResponse<void>> {
 }
 
 /**
- * Get student levels list
+ * Get the student's current level (single object)
  */
-export async function getStudentLevels(): Promise<ApiResponse<StudentLevel[]>> {
-  return api.get<StudentLevel[]>('/student/levels')
+export async function getStudentLevels(): Promise<ApiResponse<StudentLevel>> {
+  return api.get<StudentLevel>('/student/levels')
 }
 
 /**
