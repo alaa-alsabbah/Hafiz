@@ -3,11 +3,30 @@ import { ref, computed, onMounted } from 'vue'
 import { STUDENT_LABELS, STUDENT_LEVEL_TABLE_LABELS } from '@/config/student.constants'
 import { DataTable, AppLoading } from '@/components/common'
 import { getStudentLevels, getStudentLevel, exportStudentLevel, type StudentLevel } from '@/services/student.service'
-import { ApiException } from '@/services/api'
+import { ApiException, type ApiResponse } from '@/services/api'
+
+/** Backend: no Level row for this student (e.g. code 9009 or Laravel not-found message). */
+const LEVEL_NOT_FOUND_API_CODE = 9009
+
+function isNoLevelAssignedError(err: unknown): boolean {
+  if (!(err instanceof ApiException)) return false
+  if (err.code === LEVEL_NOT_FOUND_API_CODE) return true
+  const m = (err.message || '').toLowerCase()
+  return m.includes('no query results') && m.includes('level')
+}
+
+function isNoLevelAssignedResponse(response: ApiResponse<StudentLevel>): boolean {
+  if (response.success && response.data) return false
+  const code = response.error?.code ?? response.code
+  if (code === LEVEL_NOT_FOUND_API_CODE) return true
+  const m = (response.error?.message || response.message || '').toLowerCase()
+  return m.includes('no query results') && m.includes('level')
+}
 
 const loading = ref(true)
 const error = ref<string | null>(null)
 const currentLevel = ref<StudentLevel | null>(null)
+const noLevelAssignedYet = ref(false)
 
 const isDialogOpen = ref(false)
 const dialogLoading = ref(false)
@@ -39,21 +58,31 @@ async function fetchLevel() {
   try {
     loading.value = true
     error.value = null
+    noLevelAssignedYet.value = false
     const response = await getStudentLevels()
 
     if (response.success && response.data) {
       currentLevel.value = response.data
+    } else if (isNoLevelAssignedResponse(response)) {
+      currentLevel.value = null
+      noLevelAssignedYet.value = true
     } else {
       currentLevel.value = null
-      error.value = response.message || 'فشل تحميل بيانات المستوى'
+      error.value =
+        response.error?.message || response.message || 'فشل تحميل بيانات المستوى'
     }
   } catch (err) {
-    if (err instanceof ApiException) {
+    if (isNoLevelAssignedError(err)) {
+      currentLevel.value = null
+      noLevelAssignedYet.value = true
+    } else if (err instanceof ApiException) {
       error.value = err.message || 'حدث خطأ أثناء تحميل البيانات'
     } else {
       error.value = 'حدث خطأ غير متوقع'
     }
-    console.error('Student level fetch error:', err)
+    if (!isNoLevelAssignedError(err)) {
+      console.error('Student level fetch error:', err)
+    }
   } finally {
     loading.value = false
   }
@@ -140,7 +169,9 @@ async function handleExport(row: StudentLevel) {
             :columns="columns"
             :data="tableData"
             :loading="loading"
-            empty-message="لا توجد مستويات متاحة"
+            :empty-message="
+              noLevelAssignedYet ? STUDENT_LABELS.LEVEL_NOT_ASSIGNED_YET : 'لا توجد مستويات متاحة'
+            "
             loading-message="جاري تحميل تفاصيل المستويات..."
             @row-click="openLevelDetails"
           >

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getStudentDashboard, type StudentDashboard } from '@/services/student.service'
 import { ApiException } from '@/services/api'
@@ -18,29 +18,51 @@ const dashboardData = ref<StudentDashboard | null>(null)
 const error = ref<string | null>(null)
 
 // Extract level parts from level string (e.g., "المستوى الأول" -> ["المستوى", "الأول"])
-function extractLevelParts(level: string): { main: string; sub: string } {
-  const parts = level.split(' ')
+function extractLevelParts(level: string | null | undefined): { main: string; sub: string } {
+  if (level == null || String(level).trim() === '') {
+    return { main: '—', sub: '' }
+  }
+  const s = String(level).trim()
+  const parts = s.split(/\s+/)
   if (parts.length >= 2) {
     return {
-      main: parts[0], // "المستوى"
-      sub: parts.slice(1).join(' ') // "الأول"
+      main: parts[0],
+      sub: parts.slice(1).join(' ')
     }
   }
   return {
-    main: level,
+    main: s,
     sub: ''
   }
 }
 
-// Extract track name from program_track (e.g., "برنامج حفظة | مسار الإتقان..." -> "الفضي")
-function extractTrackName(programTrack: string): string {
-  // This is a placeholder - adjust based on actual API data structure
-  // For now, return a default or parse from the string
-  if (programTrack.includes('الفضي')) return 'الفضي'
-  if (programTrack.includes('الذهبي')) return 'الذهبي'
-  if (programTrack.includes('البرونزي')) return 'البرونزي'
-  return programTrack.split('|')[0]?.trim() || ''
+/**
+ * Show track text from API: prefer the segment after "|" (actual مسار), else full string.
+ * No guessed metal-tier labels unless present in the API text.
+ */
+function formatTrackDisplay(programTrack: string | null | undefined): string {
+  if (programTrack == null || String(programTrack).trim() === '') {
+    return '—'
+  }
+  const t = String(programTrack).trim()
+  const pipe = t.indexOf('|')
+  if (pipe !== -1) {
+    const after = t.slice(pipe + 1).trim()
+    if (after) return after
+  }
+  return t
 }
+
+const levelParts = computed(() => extractLevelParts(dashboardData.value?.level))
+
+/** الفرص: only show a number when API sends opportunities_count */
+const opportunitiesDisplay = computed(() => {
+  const d = dashboardData.value
+  if (!d) return '—'
+  const n = d.opportunities_count
+  if (n === null || n === undefined) return '—'
+  return String(n)
+})
 
 async function fetchDashboard() {
   try {
@@ -121,9 +143,9 @@ onMounted(() => {
               <div class="student-dashboard__stat-value">
                 <span v-if="loading" class="student-dashboard__stat-skeleton">---</span>
                 <template v-else>
-                  <div class="student-dashboard__stat-value-main">{{ extractLevelParts(dashboardData.level).main }}</div>
-                  <div class="student-dashboard__stat-value-sub" v-if="extractLevelParts(dashboardData.level).sub">
-                    {{ extractLevelParts(dashboardData.level).sub }}
+                  <div class="student-dashboard__stat-value-main">{{ levelParts.main }}</div>
+                  <div class="student-dashboard__stat-value-sub" v-if="levelParts.sub">
+                    {{ levelParts.sub }}
                   </div>
                 </template>
               </div>
@@ -141,7 +163,7 @@ onMounted(() => {
             <div class="student-dashboard__stat-content">
               <div class="student-dashboard__stat-value">
                 <span v-if="loading" class="student-dashboard__stat-skeleton">---</span>
-                <span v-else>{{ extractTrackName(dashboardData.program_track) }}</span>
+                <span v-else class="student-dashboard__stat-value--track">{{ formatTrackDisplay(dashboardData.program_track) }}</span>
               </div>
               <div class="student-dashboard__stat-label">المسار</div>
             </div>
@@ -173,7 +195,7 @@ onMounted(() => {
             <div class="student-dashboard__stat-content">
               <div class="student-dashboard__stat-value">
                 <span v-if="loading" class="student-dashboard__stat-skeleton">---</span>
-                <span v-else>9</span>
+                <span v-else>{{ opportunitiesDisplay }}</span>
               </div>
               <div class="student-dashboard__stat-label">الفرص</div>
             </div>
@@ -333,7 +355,7 @@ onMounted(() => {
 
   &__stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: $spacing-4;
     overflow-x: auto;
     padding-bottom: $spacing-2;
@@ -428,6 +450,13 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     gap: 0;
+  }
+
+  &__stat-value--track {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    line-height: 1.5;
+    word-break: break-word;
   }
 
   &__stat-value-main {

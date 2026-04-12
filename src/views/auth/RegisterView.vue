@@ -156,7 +156,9 @@ const { form: studentForm, errors: studentErrors, validate: validateStudentForm 
     howDidYouHear: '',
     howDidYouHearOther: '',
     phoneNumber: '',
-    email: ''
+    email: '',
+    password: '',
+    passwordConfirm: ''
   },
   {
     fullName: [rules.required('الاسم الكامل مطلوب')],
@@ -175,7 +177,16 @@ const { form: studentForm, errors: studentErrors, validate: validateStudentForm 
       }
     ],
     phoneNumber: [rules.required('رقم الهاتف مطلوب')],
-    email: [rules.required('البريد الإلكتروني مطلوب'), rules.email('يرجى إدخال بريد إلكتروني صحيح')]
+    email: [rules.required('البريد الإلكتروني مطلوب'), rules.email('يرجى إدخال بريد إلكتروني صحيح')],
+    password: [
+      rules.required('كلمة المرور مطلوبة'),
+      rules.minLength(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل')
+    ],
+    passwordConfirm: [
+      rules.required('تأكيد كلمة المرور مطلوب'),
+      (value, form) =>
+        (value && value === form?.password) || 'كلمة المرور غير متطابقة'
+    ]
   }
 )
 
@@ -400,6 +411,24 @@ function getLookupId(lookupName: string, formValue: string): number | null {
   return item ? item.id : null
 }
 
+/** Map yes/no lookup row to API boolean (never rely on hardcoded 'yes' string). */
+function lookupItemIsAffirmative(item: LookupItem | undefined): boolean {
+  if (!item) return false
+  const k = (item.key || item.code || '').toLowerCase().trim()
+  if (['yes', 'y', 'true', '1', 'نعم'].includes(k)) return true
+  if (['no', 'n', 'false', '0', 'لا'].includes(k)) return false
+  const ar = (item.value_ar || '').trim()
+  if (/^نعم\b|^yes\b|^موافق/i.test(ar)) return true
+  if (/^لا\b|^no\b/i.test(ar)) return false
+  return false
+}
+
+function yesNoFormValueToApiBoolean(lookupName: 'yes_no', formValue: string): 0 | 1 {
+  const items = lookups.value[lookupName] || []
+  const item = items.find((i) => getLookupOptionValue(i) === formValue)
+  return lookupItemIsAffirmative(item) ? 1 : 0
+}
+
 watch(
   () => studentForm.howDidYouHear,
   () => {
@@ -525,7 +554,7 @@ async function submitStudentRegistration() {
     const payload: Record<string, unknown> = {
       full_name: studentForm.fullName,
       email: studentForm.email.trim(),
-      password: 'TempPassword123!@#',
+      password: studentForm.password,
       role: 'student',
       gender_id: getLookupId('gender', studentForm.gender),
       country: studentForm.country || null,
@@ -540,7 +569,7 @@ async function submitStudentRegistration() {
       residence: studentStep3Form.placeOfResidence || null,
       quran_memorization_level_id: getLookupId('quran_memorization_level', studentStep3Form.quranMemorizationLevel),
       has_ijaza_id: getLookupId('has_ijaza', studentStep3Form.ijazahOrSanad),
-      watched_intro_video: studentStep3Form.watchedIntroVideo === 'yes' ? 1 : 0,
+      watched_intro_video: yesNoFormValueToApiBoolean('yes_no', studentStep3Form.watchedIntroVideo),
       program_track_id: programTrackId,
       program_id: getProgramId(),
       ...(howKnowOtherNote ? { how_did_you_know_us_other: howKnowOtherNote } : {})
@@ -612,7 +641,7 @@ async function submitTeacherRegistration() {
       mastery_percentage_id: getLookupId('mastery_percentage', teacherStep2Form.masteryPercentage),
       experience_years_id: getLookupId('experience_years', teacherStep2Form.experienceYears),
       has_ijaza_id: getLookupId('has_ijaza', teacherStep2Form.hasIjaza),
-      volunteer: teacherStep2Form.volunteer === 'yes' ? 1 : 0,
+      volunteer: yesNoFormValueToApiBoolean('yes_no', teacherStep2Form.volunteer),
       ...(howKnowTeacherOther ? { how_did_you_know_us_other: howKnowTeacherOther } : {})
     }
 
@@ -1039,6 +1068,24 @@ watch(selectedRole, (role) => {
                 label="البريد الإلكتروني"
                 placeholder="example@gmail.com"
                 :error="studentErrors.email"
+                required
+              />
+
+              <BaseInput
+                v-model="studentForm.password"
+                type="password"
+                label="كلمة المرور"
+                placeholder="أدخل كلمة المرور (8 أحرف على الأقل)"
+                :error="studentErrors.password"
+                required
+              />
+
+              <BaseInput
+                v-model="studentForm.passwordConfirm"
+                type="password"
+                label="تأكيد كلمة المرور"
+                placeholder="أعد إدخال كلمة المرور"
+                :error="studentErrors.passwordConfirm"
                 required
               />
 

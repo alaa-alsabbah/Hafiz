@@ -18,8 +18,11 @@ export interface StudentDashboard {
   email: string
   program: string
   program_track: string
-  level: string
+  /** May be null for new students until assigned */
+  level: string | null
   count_leaves: number
+  /** When API adds it; otherwise UI shows — for الفرص */
+  opportunities_count?: number | null
   tasks: Array<{
     id: number
     student_id: number

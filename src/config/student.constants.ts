@@ -11,6 +11,9 @@ export const STUDENT_LABELS = {
   DAILY_TASKS: 'الواجبات اليومية',
   COMPLETED_TASKS_TAB: 'الواجبات المنجزة',
   LEVEL_DETAILS: 'تفاصيل المستوى',
+  /** Shown when the API has no Level record yet (new students) */
+  LEVEL_NOT_ASSIGNED_YET:
+    'لم يُعيَّن لك مستوى بعد. ستظهر التفاصيل هنا بعد تعيين المستوى من الإدارة.',
   ACTIVITY_LOG: 'سجل الحركات',
   LOGOUT: 'تسجيل الخروج',
   LEADERBOARD: 'لوحة المتصدرين',

@@ -130,7 +130,6 @@ export function getRegistrationLookupGroups(
       LOOKUP_GROUPS.HAS_IJAZA,
       LOOKUP_GROUPS.PROGRAM_TRACK,
       LOOKUP_GROUPS.INTERVIEW_TIME_PREFERENCE,
-      LOOKUP_GROUPS.MEMORIZED_QURAN_COMPLETELY,
     ]
   } else {
     // Teacher specific groups
