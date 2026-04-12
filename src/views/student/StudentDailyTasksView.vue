@@ -2,18 +2,19 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { getDailyTasks, completeTask, type DailyTask } from '@/services/student.service'
 import { ApiException } from '@/services/api'
-import { BaseButton, BaseCheckbox } from '@/components/ui'
+import { BaseButton, BaseCheckbox, BaseTabs } from '@/components/ui'
 import { AppLoading, DataTable } from '@/components/common'
 import { STUDENT_LABELS } from '@/config/student.constants'
 
 const loading = ref(true)
 const activeTab = ref<'daily' | 'completed'>('daily')
 
-const viewMode = ref<'cards' | 'grid'>('cards')
+const taskTabs = [
+  { id: 'daily' as const, label: STUDENT_LABELS.DAILY_TASKS },
+  { id: 'completed' as const, label: STUDENT_LABELS.COMPLETED_TASKS_TAB },
+]
 
-function switchTab(tab: 'daily' | 'completed') {
-  activeTab.value = tab
-}
+const viewMode = ref<'cards' | 'grid'>('cards')
 const tasks = ref<DailyTask[]>([])
 const error = ref<string | null>(null)
 
@@ -147,20 +148,7 @@ const toggleViewMode = () => {
     <!-- Tabs + View Toggle -->
     <div class="student-daily-tasks__top-row">
       <div class="student-daily-tasks__tabs">
-        <button
-          class="student-daily-tasks__tab"
-          :class="{ 'student-daily-tasks__tab--active': activeTab === 'daily' }"
-          @click="switchTab('daily')"
-        >
-          {{ STUDENT_LABELS.DAILY_TASKS }}
-        </button>
-        <button
-          class="student-daily-tasks__tab"
-          :class="{ 'student-daily-tasks__tab--active': activeTab === 'completed' }"
-          @click="switchTab('completed')"
-        >
-          الواجبات المنجزة
-        </button>
+        <BaseTabs v-model="activeTab" :tabs="taskTabs" />
       </div>
 
       <button
@@ -336,6 +324,20 @@ const toggleViewMode = () => {
     @include sm-max {
       flex-direction: column;
       align-items: stretch;
+    }
+  }
+
+  &__tabs {
+    flex-shrink: 0;
+    min-width: 0;
+
+    :deep(.base-tabs) {
+      min-width: 280px;
+
+      @include sm-max {
+        min-width: 0;
+        width: 100%;
+      }
     }
   }
 

@@ -9,6 +9,7 @@ export enum StudentRoleLabel {
 export const STUDENT_LABELS = {
   PAGE_TITLE: 'لوحة التحكم',
   DAILY_TASKS: 'الواجبات اليومية',
+  COMPLETED_TASKS_TAB: 'الواجبات المنجزة',
   LEVEL_DETAILS: 'تفاصيل المستوى',
   ACTIVITY_LOG: 'سجل الحركات',
   LOGOUT: 'تسجيل الخروج',
