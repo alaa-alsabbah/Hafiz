@@ -66,14 +66,33 @@ const countries: Country[] = [
   { code: 'AU', dialCode: '+61', name: 'أستراليا', flag: '🇦🇺' }
 ]
 
-const selectedCountryCode = ref(props.countryCode || '+962')
 const isDropdownOpen = ref(false)
 const isFocused = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 const searchQuery = ref('')
 
+function findCountriesByDial(dial: string | undefined): Country[] {
+  if (!dial) return []
+  return countries.filter((c) => c.dialCode === dial)
+}
+
+function resolveCountryFromDial(dial: string | undefined): Country {
+  if (!dial) return countries[0]
+  const matches = findCountriesByDial(dial)
+  if (matches.length === 1) return matches[0]
+  if (matches.length > 1) {
+    const jordan = matches.find((c) => c.code === 'JO')
+    if (dial === '+962' && jordan) return jordan
+    return matches[0]
+  }
+  return countries[0]
+}
+
+/** ISO code (e.g. JO, US) — required so +1 can distinguish US vs CA */
+const selectedCountryIso = ref(resolveCountryFromDial(props.countryCode).code)
+
 const selectedCountry = computed(() => {
-  return countries.find(c => c.dialCode === selectedCountryCode.value) || countries[0]
+  return countries.find((c) => c.code === selectedCountryIso.value) || countries[0]
 })
 
 const filteredCountries = computed(() => {
@@ -129,7 +148,7 @@ function toggleDropdown(event?: Event) {
 }
 
 function selectCountry(country: Country) {
-  selectedCountryCode.value = country.dialCode
+  selectedCountryIso.value = country.code
   emit('update:countryCode', country.dialCode)
   isDropdownOpen.value = false
 }
@@ -147,15 +166,19 @@ function handleDropdownClick(event: MouseEvent) {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-  emit('update:countryCode', selectedCountryCode.value)
+  emit('update:countryCode', selectedCountry.value.dialCode)
 })
 
-// Watch for prop changes
-watch(() => props.countryCode, (newCode) => {
-  if (newCode && newCode !== selectedCountryCode.value) {
-    selectedCountryCode.value = newCode
+watch(
+  () => props.countryCode,
+  (newCode) => {
+    if (!newCode || newCode === selectedCountry.value.dialCode) return
+    const next = resolveCountryFromDial(newCode)
+    if (next.code !== selectedCountryIso.value) {
+      selectedCountryIso.value = next.code
+    }
   }
-})
+)
 </script>
 
 <template>
@@ -218,7 +241,7 @@ watch(() => props.countryCode, (newCode) => {
                 :key="country.code"
                 type="button"
                 class="base-phone-input__dropdown-item"
-                :class="{ 'base-phone-input__dropdown-item--selected': country.dialCode === selectedCountryCode }"
+                :class="{ 'base-phone-input__dropdown-item--selected': country.code === selectedCountryIso }"
                 @click.stop="selectCountry(country)"
                 @mousedown.prevent
               >
@@ -305,7 +328,7 @@ watch(() => props.countryCode, (newCode) => {
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    border-right: 1px solid var(--color-border);
+    border-inline-end: 1px solid var(--color-border);
   }
   
   &__country-btn {

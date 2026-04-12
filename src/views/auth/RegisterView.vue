@@ -121,6 +121,29 @@ const isLoadingLookups = ref(false)
 const lookupError = ref<string | null>(null)
 const isLoadingConfig = ref(false)
 
+function formatYmdLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const birthDateMaxStr = computed(() => formatYmdLocal(new Date()))
+const birthDateMinStr = '1920-01-01'
+
+const interviewDateMinStr = computed(() => {
+  const t = new Date()
+  t.setDate(t.getDate() + 1)
+  t.setHours(0, 0, 0, 0)
+  return formatYmdLocal(t)
+})
+
+/** "أخرى / other" — needs free-text when API uses empty key/code (resolved by id) */
+function lookupIsOtherSource(item: LookupItem | undefined): boolean {
+  if (!item) return false
+  const k = (item.key || item.code || '').toLowerCase()
+  if (['other', 'others', 'other_source'].includes(k)) return true
+  const ar = item.value_ar || ''
+  return ar.includes('أخرى') || ar.includes('اخرى') || ar.toLowerCase().includes('other')
+}
+
 // Student form step 2
 const { form: studentForm, errors: studentErrors, validate: validateStudentForm } = useValidation(
   {
@@ -131,6 +154,7 @@ const { form: studentForm, errors: studentErrors, validate: validateStudentForm 
     educationalLevel: '',
     occupation: '',
     howDidYouHear: '',
+    howDidYouHearOther: '',
     phoneNumber: '',
     email: ''
   },
@@ -142,8 +166,16 @@ const { form: studentForm, errors: studentErrors, validate: validateStudentForm 
     educationalLevel: [rules.required('المستوى التعليمي مطلوب')],
     occupation: [rules.required('الوظيفة مطلوبة')],
     howDidYouHear: [rules.required('كيف عرفت عن البرنامج مطلوب')],
+    howDidYouHearOther: [
+      (value, form) => {
+        const items = lookups.value.how_did_you_know_us || []
+        const sel = items.find((i) => getLookupOptionValue(i) === form?.howDidYouHear)
+        if (!lookupIsOtherSource(sel)) return true
+        return !!(value && String(value).trim()) || 'يرجى توضيح كيف عرفت عن البرنامج'
+      }
+    ],
     phoneNumber: [rules.required('رقم الهاتف مطلوب')],
-    email: [rules.email('يرجى إدخال بريد إلكتروني صحيح')]
+    email: [rules.required('البريد الإلكتروني مطلوب'), rules.email('يرجى إدخال بريد إلكتروني صحيح')]
   }
 )
 
@@ -180,7 +212,8 @@ const { form: teacherForm, errors: teacherErrors, validate: validateTeacherForm 
     memorizedQuranCompletely: '',
     gender: '',
     educationalLevel: '',
-    howDidYouHear: ''
+    howDidYouHear: '',
+    howDidYouHearOther: ''
   },
   {
     fullName: [rules.required('الاسم الرباعي مطلوب')],
@@ -193,7 +226,15 @@ const { form: teacherForm, errors: teacherErrors, validate: validateTeacherForm 
     memorizedQuranCompletely: [rules.required('هل تحفظ كتاب الله كاملا مطلوب')],
     gender: [rules.required('الجنس مطلوب')],
     educationalLevel: [rules.required('المستوى التعليمي مطلوب')],
-    howDidYouHear: [rules.required('كيف عرفت عن البرنامج مطلوب')]
+    howDidYouHear: [rules.required('كيف عرفت عن البرنامج مطلوب')],
+    howDidYouHearOther: [
+      (value, form) => {
+        const items = lookups.value.how_did_you_know_us || []
+        const sel = items.find((i) => getLookupOptionValue(i) === form?.howDidYouHear)
+        if (!lookupIsOtherSource(sel)) return true
+        return !!(value && String(value).trim()) || 'يرجى توضيح كيف عرفت عن البرنامج'
+      }
+    ]
   }
 )
 
@@ -351,11 +392,33 @@ function getLookupId(lookupName: string, formValue: string): number | null {
     (i) =>
       i.key === formValue ||
       i.code === formValue ||
+      String(i.id) === String(formValue) ||
+      Number(formValue) === i.id ||
       (i.value_ar && i.value_ar === formValue) ||
       (i.value_en && i.value_en === formValue)
   )
   return item ? item.id : null
 }
+
+watch(
+  () => studentForm.howDidYouHear,
+  () => {
+    const sel = (lookups.value.how_did_you_know_us || []).find(
+      (i) => getLookupOptionValue(i) === studentForm.howDidYouHear
+    )
+    if (!lookupIsOtherSource(sel)) studentForm.howDidYouHearOther = ''
+  }
+)
+
+watch(
+  () => teacherForm.howDidYouHear,
+  () => {
+    const sel = (lookups.value.how_did_you_know_us || []).find(
+      (i) => getLookupOptionValue(i) === teacherForm.howDidYouHear
+    )
+    if (!lookupIsOtherSource(sel)) teacherForm.howDidYouHearOther = ''
+  }
+)
 
 function formatDate(date: Date | string | null): string | null {
   if (!date) return null
@@ -450,10 +513,18 @@ async function submitStudentRegistration() {
       isSubmitting.value = false
       return
     }
-    
-    const payload = {
+
+    const howKnowStudent = (lookups.value.how_did_you_know_us || []).find(
+      (i) => getLookupOptionValue(i) === studentForm.howDidYouHear
+    )
+    const howKnowOtherNote =
+      lookupIsOtherSource(howKnowStudent) && studentForm.howDidYouHearOther?.trim()
+        ? studentForm.howDidYouHearOther.trim()
+        : undefined
+
+    const payload: Record<string, unknown> = {
       full_name: studentForm.fullName,
-      email: studentForm.email || `${studentForm.fullName.replace(/\s/g, '').toLowerCase()}@hafizfursan.org`,
+      email: studentForm.email.trim(),
       password: 'TempPassword123!@#',
       role: 'student',
       gender_id: getLookupId('gender', studentForm.gender),
@@ -471,7 +542,8 @@ async function submitStudentRegistration() {
       has_ijaza_id: getLookupId('has_ijaza', studentStep3Form.ijazahOrSanad),
       watched_intro_video: studentStep3Form.watchedIntroVideo === 'yes' ? 1 : 0,
       program_track_id: programTrackId,
-      program_id: getProgramId()
+      program_id: getProgramId(),
+      ...(howKnowOtherNote ? { how_did_you_know_us_other: howKnowOtherNote } : {})
     }
     
     const response = await api.post('/auth/register', payload)
@@ -512,9 +584,17 @@ async function submitTeacherRegistration() {
   submitErrors.value = {}
   
   try {
-    const payload = {
+    const howKnowTeacher = (lookups.value.how_did_you_know_us || []).find(
+      (i) => getLookupOptionValue(i) === teacherForm.howDidYouHear
+    )
+    const howKnowTeacherOther =
+      lookupIsOtherSource(howKnowTeacher) && teacherForm.howDidYouHearOther?.trim()
+        ? teacherForm.howDidYouHearOther.trim()
+        : undefined
+
+    const payload: Record<string, unknown> = {
       full_name: teacherForm.fullName,
-      email: teacherForm.email,
+      email: teacherForm.email.trim(),
       password: teacherForm.password,
       role: 'teacher',
       gender_id: getLookupId('gender', teacherForm.gender),
@@ -532,9 +612,10 @@ async function submitTeacherRegistration() {
       mastery_percentage_id: getLookupId('mastery_percentage', teacherStep2Form.masteryPercentage),
       experience_years_id: getLookupId('experience_years', teacherStep2Form.experienceYears),
       has_ijaza_id: getLookupId('has_ijaza', teacherStep2Form.hasIjaza),
-      volunteer: teacherStep2Form.volunteer === 'yes' ? 1 : 0
+      volunteer: teacherStep2Form.volunteer === 'yes' ? 1 : 0,
+      ...(howKnowTeacherOther ? { how_did_you_know_us_other: howKnowTeacherOther } : {})
     }
-    
+
     const response = await api.post('/auth/register', payload)
     
     if (response.success) {
@@ -850,8 +931,11 @@ watch(selectedRole, (role) => {
 
               <BaseDatePicker
                 v-model="studentForm.dateOfBirth"
+                mode="native"
                 label="تاريخ الميلاد"
                 placeholder="تاريخ الميلاد"
+                :min="birthDateMinStr"
+                :max="birthDateMaxStr"
                 :error="studentErrors.dateOfBirth"
                 required
               />
@@ -922,6 +1006,19 @@ watch(selectedRole, (role) => {
                   </button>
                 </div>
                 <p v-if="studentErrors.howDidYouHear" class="register-view__field-error">{{ studentErrors.howDidYouHear }}</p>
+                <BaseInput
+                  v-show="
+                    (lookups.how_did_you_know_us || []).some(
+                      (i) =>
+                        getLookupOptionValue(i) === studentForm.howDidYouHear && lookupIsOtherSource(i)
+                    )
+                  "
+                  v-model="studentForm.howDidYouHearOther"
+                  label="توضيح المصدر"
+                  placeholder="اكتب بإيجاز كيف عرفت عن البرنامج"
+                  :error="studentErrors.howDidYouHearOther"
+                  class="register-view__field-how-other"
+                />
               </div>
 
               <div class="register-view__field-group">
@@ -939,9 +1036,10 @@ watch(selectedRole, (role) => {
               <BaseInput
                 v-model="studentForm.email"
                 type="email"
-                label="البريد الإلكتروني (إن وجد)"
+                label="البريد الإلكتروني"
                 placeholder="example@gmail.com"
                 :error="studentErrors.email"
+                required
               />
 
               <div class="register-view__form-actions">
@@ -1162,7 +1260,7 @@ watch(selectedRole, (role) => {
                         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                         <polyline points="22,6 12,13 2,6" />
                       </svg>
-                      <span>{{ studentForm.email || 'info@hafizfursan.org' }}</span>
+                      <span>{{ studentForm.email }}</span>
                     </div>
                     <div class="register-view__info-item">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1323,8 +1421,11 @@ watch(selectedRole, (role) => {
 
               <BaseDatePicker
                 v-model="teacherForm.dateOfBirth"
+                mode="native"
                 label="تاريخ الميلاد"
                 placeholder="تاريخ الميلاد"
+                :min="birthDateMinStr"
+                :max="birthDateMaxStr"
                 :error="teacherErrors.dateOfBirth"
                 required
               />
@@ -1436,6 +1537,19 @@ watch(selectedRole, (role) => {
                   </button>
                 </div>
                 <p v-if="teacherErrors.howDidYouHear" class="register-view__field-error">{{ teacherErrors.howDidYouHear }}</p>
+                <BaseInput
+                  v-show="
+                    (lookups.how_did_you_know_us || []).some(
+                      (i) =>
+                        getLookupOptionValue(i) === teacherForm.howDidYouHear && lookupIsOtherSource(i)
+                    )
+                  "
+                  v-model="teacherForm.howDidYouHearOther"
+                  label="توضيح المصدر"
+                  placeholder="اكتب بإيجاز كيف عرفت عن البرنامج"
+                  :error="teacherErrors.howDidYouHearOther"
+                  class="register-view__field-how-other"
+                />
               </div>
 
               <div class="register-view__form-actions">
@@ -1592,8 +1706,10 @@ watch(selectedRole, (role) => {
 
               <BaseDatePicker
                 v-model="teacherStep2Form.interviewDate"
+                mode="native"
                 label="تاريخ المقابلة"
                 placeholder="اختر تاريخ المقابلة"
+                :min="interviewDateMinStr"
                 :error="teacherStep2Errors.interviewDate"
                 required
               />

@@ -214,7 +214,7 @@ const hasError = computed(() => !!props.error)
     
     <Transition name="calendar">
       <div v-if="isOpen" class="base-datepicker__calendar">
-        <div class="base-datepicker__calendar-header">
+        <div class="base-datepicker__calendar-header" dir="ltr">
           <div class="base-datepicker__calendar-nav-group">
             <button type="button" class="base-datepicker__calendar-nav base-datepicker__calendar-nav--year" @click="currentMonth = new Date(currentYear - 1, currentMonthIndex, 1)" title="السنة السابقة">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -223,20 +223,20 @@ const hasError = computed(() => !!props.error)
               </svg>
             </button>
             <button type="button" class="base-datepicker__calendar-nav" @click="previousMonth" title="الشهر السابق">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="m9 18 6-6-6-6" />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="m15 18-6-6 6-6" />
               </svg>
             </button>
           </div>
           
-          <div class="base-datepicker__calendar-title">
+          <div class="base-datepicker__calendar-title" dir="rtl">
             {{ months[currentMonthIndex] }} {{ currentYear }}
           </div>
           
           <div class="base-datepicker__calendar-nav-group">
             <button type="button" class="base-datepicker__calendar-nav" @click="nextMonth" title="الشهر التالي">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="m15 18-6-6 6-6" />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="m9 18 6-6-6-6" />
               </svg>
             </button>
             <button type="button" class="base-datepicker__calendar-nav base-datepicker__calendar-nav--year" @click="currentMonth = new Date(currentYear + 1, currentMonthIndex, 1)" title="السنة التالية">
@@ -390,6 +390,9 @@ const hasError = computed(() => !!props.error)
   }
   
   &__calendar-header {
+    // RTL document mirrors flex order; keep nav in logical LTR so « / » match prev/next.
+    direction: ltr;
+    unicode-bidi: isolate;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -398,7 +401,10 @@ const hasError = computed(() => !!props.error)
   
   &__calendar-nav-group {
     display: flex;
+    flex-direction: row;
     gap: $spacing-2;
+    direction: ltr;
+    unicode-bidi: isolate;
   }
   
   &__calendar-nav {
