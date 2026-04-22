@@ -39,31 +39,39 @@ export const useAuthStore = defineStore('auth', () => {
   // Actions
   async function login(
     credentials: LoginCredentials
-  ): Promise<{ success: boolean; error?: string; user?: User }> {
+  ): Promise<{
+    success: boolean
+    error?: string
+    user?: User
+    waiting?: boolean
+    waitingMessage?: string
+  }> {
     loading.value = true
     error.value = null
-    
+
     try {
-      // Real API call
-      const result = await loginRequest(credentials)
+      const outcome = await loginRequest(credentials)
 
-      user.value = result.user
-      token.value = result.token
-
-      // Persist token and user for all API calls and router guards
-      tokenManager.set(result.token)
-      if (result.refreshToken) {
-        tokenManager.setRefreshToken(result.refreshToken)
+      if (outcome.type === 'waiting') {
+        return { success: false, waiting: true, waitingMessage: outcome.message }
       }
-      saveUserToStorage(result.user)
-      
+
+      user.value = outcome.user
+      token.value = outcome.token
+
+      tokenManager.set(outcome.token)
+      if (outcome.refreshToken) {
+        tokenManager.setRefreshToken(outcome.refreshToken)
+      }
+      saveUserToStorage(outcome.user)
+
       if (credentials.rememberMe) {
         localStorage.setItem('rememberedEmail', credentials.email)
       } else {
         localStorage.removeItem('rememberedEmail')
       }
-      
-      return { success: true, user: result.user }
+
+      return { success: true, user: outcome.user }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'حدث خطأ أثناء تسجيل الدخول'
       error.value = message

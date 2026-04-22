@@ -38,34 +38,64 @@ export interface LoginResult {
   refreshToken?: string
 }
 
+/** Successful login vs account pending manager approval */
+export type LoginRequestOutcome =
+  | { type: 'authenticated'; user: User; token: string; refreshToken?: string }
+  | { type: 'waiting'; message: string }
+
+function isWaitingLoginPayload(data: unknown): data is { status: string } {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'status' in data &&
+    (data as { status: unknown }).status === 'waiting'
+  )
+}
+
 /**
  * Call backend login API
  */
 export async function loginRequest(
   credentials: LoginCredentials
-): Promise<LoginResult> {
-  const response = await api.post<LoginResponseData>(AUTH_API_ENDPOINTS.LOGIN, {
-    email: credentials.email,
-    password: credentials.password,
-  })
+): Promise<LoginRequestOutcome> {
+  const response = await api.post<LoginResponseData | { status: string }>(
+    AUTH_API_ENDPOINTS.LOGIN,
+    {
+      email: credentials.email,
+      password: credentials.password,
+    }
+  )
 
-  if (!response.success || !response.data) {
+  if (!response.success || response.data === undefined || response.data === null) {
     throw new Error(response.message || 'فشل تسجيل الدخول')
   }
 
   const data = response.data
 
+  if (isWaitingLoginPayload(data)) {
+    return {
+      type: 'waiting',
+      message: response.message || 'حسابك قيد الموافقة من قبل المدير',
+    }
+  }
+
+  const loginData = data as LoginResponseData
+  if (!loginData.access_token) {
+    throw new Error(response.message || 'فشل تسجيل الدخول')
+  }
+
   const user: User = {
-    id: data.id,
-    email: data.email,
-    name: data.full_name,
-    role: data.role,
+    id: loginData.id,
+    email: loginData.email,
+    name: loginData.full_name,
+    role: loginData.role,
   }
 
   return {
+    type: 'authenticated',
     user,
-    token: data.access_token,
-    refreshToken: data.refresh_token,
+    token: loginData.access_token,
+    refreshToken: loginData.refresh_token,
   }
 }
 

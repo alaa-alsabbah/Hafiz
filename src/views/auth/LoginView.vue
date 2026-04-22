@@ -6,6 +6,7 @@ import { useValidation, rules } from '@/composables/useValidation'
 import { BaseInput, BaseButton, BaseCheckbox } from '@/components/ui'
 import { IconMail, IconLock, IconArrowLeft } from '@/components/icons'
 import AppLogo from '@/components/common/AppLogo.vue'
+import LoginWaitingDialog from '@/components/common/LoginWaitingDialog.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -20,6 +21,8 @@ const { form, errors, validate } = useValidation(
 
 const rememberMe = ref(false)
 const isSubmitting = ref(false)
+const waitingDialogOpen = ref(false)
+const waitingDialogMessage = ref('')
 
 onMounted(() => {
   const rememberedEmail = localStorage.getItem('rememberedEmail')
@@ -40,7 +43,13 @@ async function handleSubmit(): Promise<void> {
       password: form.password,
       rememberMe: rememberMe.value
     })
-    
+
+    if (result.waiting && result.waitingMessage) {
+      waitingDialogMessage.value = result.waitingMessage
+      waitingDialogOpen.value = true
+      return
+    }
+
     if (result.success) {
       // Get user from result or store (result.user is more reliable)
       const user = result.user || authStore.currentUser
@@ -135,6 +144,11 @@ function goToForgotPassword(): void {
       <IconArrowLeft class="login-view__back-icon" />
       <span>العودة إلى الصفحة الرئيسية</span>
     </button>
+
+    <LoginWaitingDialog
+      v-model="waitingDialogOpen"
+      :message="waitingDialogMessage"
+    />
   </div>
 </template>
 
