@@ -198,6 +198,41 @@ export async function assignStudentToTeacher(
   )
 }
 
+/** Payload for POST /admin/students/:id/transfer */
+export interface TransferAdminStudentPayload {
+  program_id: number
+  program_track_id: number
+  level_id: number
+}
+
+/**
+ * Transfer a student to another program/track/level
+ * POST /admin/students/:id/transfer (form-data)
+ */
+export async function transferAdminStudent(
+  id: number,
+  payload: TransferAdminStudentPayload
+): Promise<ApiResponse<string>> {
+  const formData = new FormData()
+  formData.append('program_id', String(payload.program_id))
+  formData.append('program_track_id', String(payload.program_track_id))
+  formData.append('level_id', String(payload.level_id))
+  return api.post<string>(`${ADMIN_API_ENDPOINTS.STUDENTS}/${id}/transfer`, formData)
+}
+
+/**
+ * Update student warnings/alerts count
+ * POST /admin/students/:id/alerts (form-data)
+ */
+export async function updateAdminStudentAlerts(
+  id: number,
+  warningsCount: number
+): Promise<ApiResponse<string>> {
+  const formData = new FormData()
+  formData.append('warnings_count', String(warningsCount))
+  return api.post<string>(`${ADMIN_API_ENDPOINTS.STUDENTS}/${id}/alerts`, formData)
+}
+
 /** Admin attendances (weekly report) - single attendance record */
 export interface AdminAttendance {
   id: number

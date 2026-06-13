@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { BaseTable, AppLoading, StudentProfileDrawer, AssignStudentDialog, EditStudentDialog, DataTableFilterBar, KpiStatCard } from '@/components/common'
+import { BaseTable, AppLoading, StudentProfileDrawer, AssignStudentDialog, EditStudentDialog, TransferStudentDialog, AlertsStudentDialog, DataTableFilterBar, KpiStatCard } from '@/components/common'
 import type { AssignStudentPayload } from '@/components/common/AssignStudentDialog.vue'
+import type { TransferStudentPayload } from '@/components/common/TransferStudentDialog.vue'
+import type { AlertsStudentPayload } from '@/components/common/AlertsStudentDialog.vue'
 import { ActionMenu } from '@/components/ui'
 import type { ActionMenuItem } from '@/components/ui/ActionMenu.vue'
 import type { ApiResponse } from '@/services/api'
@@ -27,6 +29,12 @@ const assignStudent = ref<AssignStudentPayload | null>(null)
 
 const showEditDialog = ref(false)
 const editStudentId = ref<number | null>(null)
+
+const showTransferDialog = ref(false)
+const transferStudent = ref<TransferStudentPayload | null>(null)
+
+const showAlertsDialog = ref(false)
+const alertsStudent = ref<AlertsStudentPayload | null>(null)
 
 const deleteConfirm = ref<AdminStudent | null>(null)
 const deleteLoading = ref(false)
@@ -134,11 +142,39 @@ function openEditDialog(row: AdminStudent) {
   showEditDialog.value = true
 }
 
+function openTransferDialog(row: AdminStudent) {
+  transferStudent.value = {
+    id: row.id,
+    full_name: row.full_name,
+    program: row.program,
+    program_track: row.program_track,
+    level: row.level,
+  }
+  showTransferDialog.value = true
+}
+
+function openAlertsDialog(row: AdminStudent) {
+  alertsStudent.value = {
+    id: row.id,
+    full_name: row.full_name,
+    warnings_count: row.warnings_count,
+  }
+  showAlertsDialog.value = true
+}
+
 function onAssignSuccess() {
   fetchStudents()
 }
 
 function onEditSuccess() {
+  fetchStudents()
+}
+
+function onTransferSuccess() {
+  fetchStudents()
+}
+
+function onAlertsSuccess() {
   fetchStudents()
 }
 
@@ -214,6 +250,8 @@ function getActionItems(row: AdminStudent): ActionMenuItem[] {
     { id: 'view', label: ADMIN_STUDENTS_PAGE.ACTIONS.VIEW, icon: 'eye', onClick: () => openStudentProfile(row.id) },
     { id: 'assign', label: ADMIN_STUDENTS_PAGE.ACTIONS.ASSIGN, icon: 'user-plus', onClick: () => openAssignDialog(row) },
     { id: 'edit', label: ADMIN_STUDENTS_PAGE.ACTIONS.EDIT, icon: 'edit', onClick: () => openEditDialog(row) },
+    { id: 'transfer', label: ADMIN_STUDENTS_PAGE.ACTIONS.TRANSFER, icon: 'transfer', onClick: () => openTransferDialog(row) },
+    { id: 'alerts', label: ADMIN_STUDENTS_PAGE.ACTIONS.ALERTS, icon: 'alert', onClick: () => openAlertsDialog(row) },
     { id: 'email', label: ADMIN_STUDENTS_PAGE.ACTIONS.EMAIL, icon: 'email', onClick: () => {} },
     { id: 'whatsapp', label: ADMIN_STUDENTS_PAGE.ACTIONS.WHATSAPP, icon: 'whatsapp', onClick: () => {} },
     { id: 'delete', label: ADMIN_STUDENTS_PAGE.ACTIONS.DELETE, icon: 'trash', onClick: () => openDeleteConfirm(row) },
@@ -369,6 +407,18 @@ onMounted(() => fetchStudents())
         v-model="showEditDialog"
         :student-id="editStudentId"
         @success="onEditSuccess"
+      />
+
+      <TransferStudentDialog
+        v-model="showTransferDialog"
+        :student="transferStudent"
+        @success="onTransferSuccess"
+      />
+
+      <AlertsStudentDialog
+        v-model="showAlertsDialog"
+        :student="alertsStudent"
+        @success="onAlertsSuccess"
       />
 
       <!-- Delete student confirmation -->
