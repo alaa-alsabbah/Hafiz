@@ -36,7 +36,8 @@ const selectedLabel = computed(() => {
   const opt = props.options.find(
     (o) => o.value === props.modelValue || String(o.value) === String(props.modelValue)
   )
-  return opt?.label ?? ''
+  if (opt?.label) return opt.label
+  return String(props.modelValue)
 })
 
 const hasValue = computed(() => props.modelValue != null && props.modelValue !== '')

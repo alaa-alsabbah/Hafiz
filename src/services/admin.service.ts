@@ -91,6 +91,7 @@ export interface AdminStudent {
   interview_time_preference: string | null
   interview_date: string | null
   score: number
+  level_id: number | null
   level: string | null
   program: string
   program_track: string

@@ -148,6 +148,7 @@ function openTransferDialog(row: AdminStudent) {
     full_name: row.full_name,
     program: row.program,
     program_track: row.program_track,
+    level_id: row.level_id,
     level: row.level,
   }
   showTransferDialog.value = true

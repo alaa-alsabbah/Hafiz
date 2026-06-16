@@ -7,6 +7,7 @@ import {
   type AdminStudentDetail,
 } from '@/services/admin.service'
 import { getLookups, LOOKUP_GROUPS, type LookupItem } from '@/services/lookups.service'
+import { getLevelsByProgramTrack, type ProgramTrackLevel } from '@/services/levels.service'
 import { ADMIN_STUDENTS_PAGE } from '@/config/admin.constants'
 import AppLoading from '@/components/common/AppLoading.vue'
 
@@ -15,6 +16,7 @@ export interface TransferStudentPayload {
   full_name: string
   program: string
   program_track: string
+  level_id: number | null
   level: string | null
 }
 
@@ -33,6 +35,8 @@ const LABELS = ADMIN_STUDENTS_PAGE.TRANSFER_DIALOG
 
 const lookups = ref<Record<string, LookupItem[]>>({})
 const lookupsLoading = ref(false)
+const levels = ref<ProgramTrackLevel[]>([])
+const levelsLoading = ref(false)
 const programId = ref<number | null>(null)
 const programTrackId = ref<number | null>(null)
 const levelId = ref<number | null>(null)
@@ -63,13 +67,89 @@ function getProgramIdFromTrackId(trackId: number): number {
 function findLookupIdByValue(group: string, displayValue: string | null): number | null {
   if (!displayValue) return null
   const items = lookups.value[group] || []
-  const item = items.find(
+  const normalized = displayValue.trim().toLowerCase()
+
+  const exact = items.find(
     (i) =>
       i.value_ar === displayValue ||
       i.value_en === displayValue ||
       i.key === displayValue
   )
-  return item ? item.id : null
+  if (exact) return exact.id
+
+  const partial = items.find((i) => {
+    const ar = (i.value_ar || '').toLowerCase()
+    const en = (i.value_en || '').toLowerCase()
+    return (
+      (ar && (normalized.includes(ar) || ar.includes(normalized))) ||
+      (en && (normalized.includes(en) || en.includes(normalized)))
+    )
+  })
+  return partial?.id ?? null
+}
+
+function getProgramIdFromProgramName(program: string): number | null {
+  if (program.includes('فرسان')) return 2
+  if (program.includes('حفظ')) return 1
+  return null
+}
+
+async function resolveProgramTrackId(
+  programTrack: string,
+  program: string,
+  studentLevelId: number | null
+): Promise<number | null> {
+  const lookupId = findLookupIdByValue('program_track', programTrack)
+  const programFilterId = getProgramIdFromProgramName(program)
+
+  const candidateIds = (lookups.value.program_track || [])
+    .filter((track) => {
+      if (programFilterId == null) return true
+      return getProgramIdFromTrackId(track.id) === programFilterId
+    })
+    .map((track) => track.id)
+
+  const orderedIds = lookupId != null
+    ? [lookupId, ...candidateIds.filter((id) => id !== lookupId)]
+    : candidateIds
+
+  if (studentLevelId == null) {
+    return lookupId ?? orderedIds[0] ?? null
+  }
+
+  for (const trackId of orderedIds) {
+    try {
+      const trackLevels = await getLevelsByProgramTrack(trackId)
+      if (trackLevels.some((l) => l.id === studentLevelId)) {
+        return trackId
+      }
+    } catch {
+      continue
+    }
+  }
+
+  return lookupId ?? orderedIds[0] ?? null
+}
+
+function applyLevelSelection(preferredLevelId: number | null, levelName: string | null) {
+  let resolvedId: number | null = null
+
+  if (preferredLevelId != null && levels.value.some((l) => l.id === preferredLevelId)) {
+    resolvedId = preferredLevelId
+  } else if (levelName) {
+    resolvedId = findLevelIdByName(levelName)
+  }
+
+  if (resolvedId == null && preferredLevelId != null) {
+    const label = levelName || `المستوى ${preferredLevelId}`
+    levels.value = [
+      { id: preferredLevelId, name: label, description: null },
+      ...levels.value.filter((l) => l.id !== preferredLevelId),
+    ]
+    resolvedId = preferredLevelId
+  }
+
+  levelId.value = resolvedId
 }
 
 const programTrackOptions = computed(() => {
@@ -78,7 +158,46 @@ const programTrackOptions = computed(() => {
   return all.filter((opt) => getProgramIdFromTrackId(Number(opt.value)) === programId.value)
 })
 
-const levelOptions = computed(() => toOptions(lookups.value.education_level || []))
+const levelOptions = computed(() =>
+  levels.value.map((level) => ({
+    id: level.id,
+    value: level.id,
+    label: level.name,
+  }))
+)
+
+function findLevelIdByName(levelName: string | null): number | null {
+  if (!levelName) return null
+  const match = levels.value.find((l) => l.name === levelName)
+  return match?.id ?? null
+}
+
+async function fetchLevelsForTrack(
+  trackId: number,
+  preferredLevelId?: number | null,
+  levelName?: string | null
+) {
+  levelsLoading.value = true
+  try {
+    levels.value = await getLevelsByProgramTrack(trackId)
+    applyLevelSelection(preferredLevelId ?? null, levelName ?? null)
+  } catch {
+    levels.value = []
+    if (preferredLevelId != null) {
+      levels.value = [{
+        id: preferredLevelId,
+        name: levelName || `المستوى ${preferredLevelId}`,
+        description: null,
+      }]
+      levelId.value = preferredLevelId
+    } else {
+      levelId.value = null
+    }
+    error.value = 'فشل تحميل المستويات'
+  } finally {
+    levelsLoading.value = false
+  }
+}
 
 watch(
   () => props.modelValue,
@@ -87,6 +206,7 @@ watch(
       programId.value = null
       programTrackId.value = null
       levelId.value = null
+      levels.value = []
       error.value = null
       successMessage.value = null
       return
@@ -97,58 +217,72 @@ watch(
     successMessage.value = null
     lookupsLoading.value = true
     try {
-      const fetched = await getLookups([
-        LOOKUP_GROUPS.PROGRAM_TRACK,
-        LOOKUP_GROUPS.EDUCATION_LEVEL,
-      ])
+      const fetched = await getLookups([LOOKUP_GROUPS.PROGRAM_TRACK])
       lookups.value = {
         program_track: [],
-        education_level: [],
         ...fetched,
       }
 
+      await populateFormFromRow(props.student)
+
       const res = await getAdminStudent(props.student.id)
       if (res.success && res.data) {
-        populateForm(res.data)
-      } else {
-        populateFormFromRow(props.student)
+        await populateForm(res.data, props.student)
       }
     } catch {
-      populateFormFromRow(props.student)
+      await populateFormFromRow(props.student!)
     } finally {
       lookupsLoading.value = false
     }
   }
 )
 
-function populateForm(d: AdminStudentDetail) {
+async function populateForm(d: AdminStudentDetail, row?: TransferStudentPayload) {
+  const preferredLevelId = d.level_id ?? row?.level_id ?? null
+  const levelName = d.level ?? row?.level ?? null
+
+  const resolvedTrackId = await resolveProgramTrackId(
+    d.program_track ?? row?.program_track ?? '',
+    d.program ?? row?.program ?? '',
+    preferredLevelId
+  )
+
   programTrackId.value =
     d.program_track_id ??
+    resolvedTrackId ??
     findLookupIdByValue('program_track', d.program_track) ??
-    findLookupIdByValue('program_track', d.program) ??
-    null
+    (row ? findLookupIdByValue('program_track', row.program_track) : null)
 
   programId.value =
     d.program_id ??
+    getProgramIdFromProgramName(d.program ?? row?.program ?? '') ??
     (programTrackId.value != null ? getProgramIdFromTrackId(programTrackId.value) : null)
 
-  levelId.value =
-    d.level_id ??
-    findLookupIdByValue('education_level', d.level) ??
-    null
+  if (programTrackId.value != null) {
+    await fetchLevelsForTrack(programTrackId.value, preferredLevelId, levelName)
+  } else {
+    levelId.value = preferredLevelId
+  }
 }
 
-function populateFormFromRow(row: TransferStudentPayload) {
-  programTrackId.value = findLookupIdByValue('program_track', row.program_track)
+async function populateFormFromRow(row: TransferStudentPayload) {
+  const resolvedTrackId = await resolveProgramTrackId(
+    row.program_track,
+    row.program,
+    row.level_id
+  )
+
+  programTrackId.value = resolvedTrackId
   programId.value =
-    programTrackId.value != null
-      ? getProgramIdFromTrackId(programTrackId.value)
-      : row.program.includes('فرسان')
-        ? 2
-        : row.program.includes('حفظ')
-          ? 1
-          : null
-  levelId.value = findLookupIdByValue('education_level', row.level)
+    resolvedTrackId != null
+      ? getProgramIdFromTrackId(resolvedTrackId)
+      : getProgramIdFromProgramName(row.program)
+
+  if (programTrackId.value != null) {
+    await fetchLevelsForTrack(programTrackId.value, row.level_id, row.level)
+  } else {
+    levelId.value = row.level_id
+  }
 }
 
 function onProgramSelect(v: string | number | null) {
@@ -158,15 +292,22 @@ function onProgramSelect(v: string | number | null) {
     const trackProgramId = getProgramIdFromTrackId(programTrackId.value)
     if (id != null && trackProgramId !== id) {
       programTrackId.value = null
+      levelId.value = null
+      levels.value = []
     }
   }
 }
 
-function onProgramTrackSelect(v: string | number | null) {
+async function onProgramTrackSelect(v: string | number | null) {
   const id = v === null || v === '' ? null : Number(v)
   programTrackId.value = id
+  levelId.value = null
+  levels.value = []
+
   if (id != null) {
     programId.value = getProgramIdFromTrackId(id)
+    error.value = null
+    await fetchLevelsForTrack(id)
   }
 }
 
@@ -273,9 +414,11 @@ async function handleTransfer() {
             <div class="transfer-student-dialog__field">
               <label class="transfer-student-dialog__label">{{ LABELS.LEVEL }}</label>
               <BaseSelect
+                :key="`level-${programTrackId}-${levels.length}-${levelId}`"
                 :model-value="levelId"
                 :options="levelOptions"
-                :placeholder="LABELS.LEVEL"
+                :placeholder="programTrackId == null ? 'اختر المسار أولاً' : levelsLoading ? 'جاري تحميل المستويات...' : LABELS.LEVEL"
+                :disabled="programTrackId == null || levelsLoading"
                 class="transfer-student-dialog__select"
                 @update:model-value="(v) => { levelId = v === null || v === '' ? null : Number(v) }"
               />
