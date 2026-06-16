@@ -469,9 +469,27 @@ function formatDate(date: Date | string | null): string | null {
   return `${year}-${month}-${day}`
 }
 
-function getProgramId(): number {
+// Derive program_id dynamically from selected program track (حفظة / فرسان)
+function getProgramIdFromTrackId(trackId: number | null): number {
+  if (trackId == null) {
+    return getProgramIdFromSelectedProgram()
+  }
+
+  const tracks = (lookups.value.program_track || []) as Array<{ id: number; value_ar?: string; value_en?: string; key?: string }>
+  const item = tracks.find((t) => t.id === trackId)
+  const text = (item?.value_ar || item?.value_en || item?.key || '').toLowerCase()
+
+  // Program 1 = حفظة (Huffaz / Itqan), Program 2 = فرسان (Fursan)
+  if (text.includes('فرسان') || text.includes('fursan')) {
+    return 2
+  }
+  return 1
+}
+
+// Fallback: derive program_id from the high-level program selection tabs
+function getProgramIdFromSelectedProgram(): number {
   const programs = registrationConfig.value.student?.programs || []
-  const selected = programs.find(p => p.key === selectedProgram.value)
+  const selected = programs.find((p) => p.key === selectedProgram.value)
   return selected?.id || 1
 }
 
@@ -581,7 +599,7 @@ async function submitStudentRegistration() {
       has_ijaza_id: getLookupId('has_ijaza', studentStep3Form.ijazahOrSanad),
       watched_intro_video: yesNoFormValueToApiBoolean('yes_no', studentStep3Form.watchedIntroVideo),
       program_track_id: programTrackId,
-      program_id: getProgramId(),
+      program_id: getProgramIdFromTrackId(programTrackId),
       ...(howKnowOtherNote ? { how_did_you_know_us_other: howKnowOtherNote } : {})
     }
     
