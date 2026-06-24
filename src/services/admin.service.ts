@@ -114,7 +114,6 @@ export interface AdminStudentDetail extends AdminStudent {
   birth_date?: string | null
   job?: string | null
   volunteer?: string | null
-  level_id?: number | null
   watched_intro_video_id?: number
 }
 
