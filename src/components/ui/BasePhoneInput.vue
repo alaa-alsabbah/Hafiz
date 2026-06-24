@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 
 interface Country {
   code: string
@@ -68,7 +68,13 @@ const countries: Country[] = [
 
 const isDropdownOpen = ref(false)
 const isFocused = ref(false)
-const dropdownRef = ref<HTMLElement | null>(null)
+const countrySelectorRef = ref<HTMLElement | null>(null)
+const dropdownPanelRef = ref<HTMLElement | null>(null)
+const dropdownStyle = ref<{ top: string; left: string; width: string }>({
+  top: '0',
+  left: '0',
+  width: '300px',
+})
 const searchQuery = ref('')
 
 function findCountriesByDial(dial: string | undefined): Country[] {
@@ -120,12 +126,45 @@ function handleFocus(event: FocusEvent) {
 function handleBlur(event: FocusEvent) {
   isFocused.value = false
   emit('blur', event)
-  // Close dropdown after a delay to allow click events
   setTimeout(() => {
-    if (!dropdownRef.value?.contains(document.activeElement)) {
-      isDropdownOpen.value = false
+    const active = document.activeElement
+    const inSelector = countrySelectorRef.value?.contains(active)
+    const inDropdown = dropdownPanelRef.value?.contains(active)
+    if (!inSelector && !inDropdown) {
+      closeDropdown()
     }
   }, 250)
+}
+
+function updateDropdownPosition() {
+  if (!countrySelectorRef.value) return
+  const rect = countrySelectorRef.value.getBoundingClientRect()
+  const width = Math.max(rect.width, 300)
+  dropdownStyle.value = {
+    top: `${rect.bottom + 8}px`,
+    left: `${rect.left}px`,
+    width: `${width}px`,
+  }
+}
+
+function focusSearchInput() {
+  nextTick(() => {
+    const searchInput = dropdownPanelRef.value?.querySelector(
+      '.base-phone-input__search-input'
+    ) as HTMLInputElement | null
+    searchInput?.focus()
+  })
+}
+
+function openDropdown() {
+  isDropdownOpen.value = true
+  searchQuery.value = ''
+  updateDropdownPosition()
+  focusSearchInput()
+}
+
+function closeDropdown() {
+  isDropdownOpen.value = false
 }
 
 function toggleDropdown(event?: Event) {
@@ -134,29 +173,31 @@ function toggleDropdown(event?: Event) {
     event.stopPropagation()
   }
   if (props.disabled) return
-  isDropdownOpen.value = !isDropdownOpen.value
   if (isDropdownOpen.value) {
-    searchQuery.value = ''
-    // Focus search input when dropdown opens
-    setTimeout(() => {
-      const searchInput = dropdownRef.value?.querySelector('.base-phone-input__search-input') as HTMLInputElement
-      if (searchInput) {
-        searchInput.focus()
-      }
-    }, 100)
+    closeDropdown()
+    return
   }
+  openDropdown()
 }
 
 function selectCountry(country: Country) {
   selectedCountryIso.value = country.code
   emit('update:countryCode', country.dialCode)
-  isDropdownOpen.value = false
+  closeDropdown()
 }
 
 function handleClickOutside(event: MouseEvent) {
   const target = event.target as Node
-  if (dropdownRef.value && !dropdownRef.value.contains(target)) {
-    isDropdownOpen.value = false
+  const inSelector = countrySelectorRef.value?.contains(target)
+  const inDropdown = dropdownPanelRef.value?.contains(target)
+  if (!inSelector && !inDropdown) {
+    closeDropdown()
+  }
+}
+
+function handleScrollOrResize() {
+  if (isDropdownOpen.value) {
+    updateDropdownPosition()
   }
 }
 
@@ -165,8 +206,22 @@ function handleDropdownClick(event: MouseEvent) {
 }
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
+  document.addEventListener('click', handleClickOutside, true)
+  window.addEventListener('scroll', handleScrollOrResize, true)
+  window.addEventListener('resize', handleScrollOrResize)
   emit('update:countryCode', selectedCountry.value.dialCode)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside, true)
+  window.removeEventListener('scroll', handleScrollOrResize, true)
+  window.removeEventListener('resize', handleScrollOrResize)
+})
+
+watch(isDropdownOpen, (open) => {
+  if (open) {
+    updateDropdownPosition()
+  }
 })
 
 watch(
@@ -190,70 +245,46 @@ watch(
     
     <div 
       class="base-phone-input__wrapper"
+      dir="ltr"
       :class="{ 
         'base-phone-input__wrapper--focused': isFocused,
         'base-phone-input__wrapper--error': hasError,
         'base-phone-input__wrapper--disabled': disabled
       }"
     >
-      <!-- Country Code Dropdown -->
-      <div class="base-phone-input__country-selector" ref="dropdownRef">
+      <!-- Country Code Dropdown (left) -->
+      <div class="base-phone-input__country-selector" ref="countrySelectorRef">
         <button
           type="button"
           class="base-phone-input__country-btn"
+          :class="{ 'base-phone-input__country-btn--open': isDropdownOpen }"
           :disabled="disabled"
           @click.stop="toggleDropdown"
           @mousedown.prevent.stop
         >
           <span class="base-phone-input__flag">{{ selectedCountry.flag }}</span>
-          <span class="base-phone-input__dial-code">{{ selectedCountry.dialCode }}</span>
+          <span class="base-phone-input__country-meta">
+            <span class="base-phone-input__dial-code">{{ selectedCountry.dialCode }}</span>
+            <span class="base-phone-input__iso-code">{{ selectedCountry.code }}</span>
+          </span>
           <svg 
             class="base-phone-input__chevron"
             :class="{ 'base-phone-input__chevron--open': isDropdownOpen }"
-            width="14" 
-            height="14" 
-            viewBox="0 0 12 12" 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
             fill="none" 
             stroke="currentColor" 
-            stroke-width="2"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           >
-            <path d="m3 4.5 3 3 3-3" />
+            <polyline points="6 9 12 15 18 9" />
           </svg>
         </button>
-        
-        <!-- Dropdown Menu -->
-        <Transition name="dropdown">
-          <div v-if="isDropdownOpen" class="base-phone-input__dropdown" @click.stop="handleDropdownClick">
-            <div class="base-phone-input__dropdown-search">
-              <input
-                v-model="searchQuery"
-                type="text"
-                placeholder="ابحث عن دولة..."
-                class="base-phone-input__search-input"
-                @input.stop
-                @click.stop
-                @focus.stop
-              />
-            </div>
-            <div class="base-phone-input__dropdown-list">
-              <button
-                v-for="country in filteredCountries"
-                :key="country.code"
-                type="button"
-                class="base-phone-input__dropdown-item"
-                :class="{ 'base-phone-input__dropdown-item--selected': country.code === selectedCountryIso }"
-                @click.stop="selectCountry(country)"
-                @mousedown.prevent
-              >
-                <span class="base-phone-input__flag-item" :title="country.name">{{ country.flag }}</span>
-                <span class="base-phone-input__country-dial">{{ country.dialCode }}</span>
-              </button>
-            </div>
-          </div>
-        </Transition>
       </div>
       
-      <!-- Phone Number Input -->
+      <!-- Phone Number Input (right) -->
       <input
         :id="id"
         :value="modelValue"
@@ -268,6 +299,57 @@ watch(
         @blur="handleBlur"
       />
     </div>
+
+    <Teleport to="body">
+      <Transition name="dropdown">
+        <div
+          v-if="isDropdownOpen"
+          ref="dropdownPanelRef"
+          class="base-phone-input__dropdown base-phone-input__dropdown--fixed"
+          :style="dropdownStyle"
+          @click.stop="handleDropdownClick"
+        >
+          <div class="base-phone-input__dropdown-search">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="ابحث عن دولة..."
+              class="base-phone-input__search-input"
+              dir="rtl"
+              @input.stop
+              @click.stop
+              @focus.stop
+            />
+          </div>
+          <div class="base-phone-input__dropdown-list">
+            <button
+              v-for="country in filteredCountries"
+              :key="country.code"
+              type="button"
+              class="base-phone-input__dropdown-item"
+              :class="{ 'base-phone-input__dropdown-item--selected': country.code === selectedCountryIso }"
+              @click.stop="selectCountry(country)"
+              @mousedown.prevent
+            >
+              <span class="base-phone-input__flag-item" :title="country.name">{{ country.flag }}</span>
+              <span class="base-phone-input__dropdown-item-text">
+                <span class="base-phone-input__country-name">{{ country.name }}</span>
+                <span class="base-phone-input__country-dial">{{ country.dialCode }}</span>
+              </span>
+              <span
+                v-if="country.code === selectedCountryIso"
+                class="base-phone-input__dropdown-check"
+                aria-hidden="true"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
     
     <p v-if="error" class="base-phone-input__error">{{ error }}</p>
   </div>
@@ -293,7 +375,9 @@ watch(
   &__wrapper {
     position: relative;
     display: flex;
-    align-items: center;
+    align-items: stretch;
+    direction: ltr;
+    unicode-bidi: isolate;
     background-color: var(--color-background-input);
     border: 1px solid var(--color-border);
     border-radius: $radius-lg;
@@ -328,23 +412,31 @@ watch(
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    border-inline-end: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+    background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
+    border-radius: $radius-lg 0 0 $radius-lg;
   }
   
   &__country-btn {
     display: flex;
     align-items: center;
     gap: $spacing-2;
+    min-width: 118px;
     padding: 0 $spacing-3;
     height: $input-height;
     border: none;
     background: transparent;
     cursor: pointer;
-    color: var(--color-text-muted);
-    transition: color $transition-fast;
+    color: var(--color-text-primary);
+    transition: background-color $transition-fast, color $transition-fast;
+    border-radius: $radius-lg 0 0 $radius-lg;
     
     &:hover:not(:disabled) {
-      color: var(--color-text-secondary);
+      background-color: rgba(0, 0, 0, 0.03);
+    }
+
+    &--open {
+      background-color: rgba(0, 0, 0, 0.04);
     }
     
     &:disabled {
@@ -354,13 +446,36 @@ watch(
   }
   
   &__flag {
-    font-size: 20px;
+    font-size: 22px;
     line-height: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     user-select: none;
+  }
+
+  &__country-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    min-width: 0;
+  }
+  
+  &__dial-code {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    color: var(--color-text-primary);
+    line-height: 1.2;
+  }
+
+  &__iso-code {
+    font-size: 0.65rem;
+    font-weight: $font-weight-medium;
+    color: var(--color-text-muted);
+    letter-spacing: 0.04em;
+    line-height: 1;
   }
   
   &__flag-item {
@@ -373,53 +488,53 @@ watch(
     user-select: none;
   }
   
-  &__dial-code {
-    font-size: $font-size-sm;
-    font-weight: $font-weight-medium;
-    color: var(--color-text-primary);
-  }
-  
   &__chevron {
-    transition: transform $transition-fast;
+    margin-left: auto;
+    transition: transform $transition-fast, color $transition-fast;
     color: var(--color-text-muted);
     flex-shrink: 0;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     
     &--open {
       transform: rotate(180deg);
+      color: var(--color-primary);
     }
   }
   
   &__dropdown {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
-    background: var(--color-background);
-    border: 1px solid var(--color-border);
-    border-radius: $radius-lg;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
-    max-height: 300px;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: $radius-xl;
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.08),
+      0 10px 24px -4px rgba(0, 0, 0, 0.12);
+    z-index: 1100;
+    max-height: 320px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+
+    &--fixed {
+      position: fixed;
+      transform-origin: top left;
+    }
   }
   
   &__dropdown-search {
-    padding: $spacing-2;
+    padding: $spacing-3;
     border-bottom: 1px solid var(--color-border);
+    background: #fafafa;
   }
   
   &__search-input {
     width: 100%;
-    height: $input-height;
+    height: 42px;
     padding: 0 $spacing-4;
     border: 1px solid var(--color-border);
-    border-radius: $radius-md;
+    border-radius: $radius-lg;
     font-size: $font-size-base;
-    background: var(--color-background-input);
+    background: #fff;
     font-family: var(--font-family);
     color: var(--color-text-primary);
     transition: all $transition-fast;
@@ -437,44 +552,68 @@ watch(
   
   &__dropdown-list {
     overflow-y: auto;
-    max-height: 240px;
-    padding: $spacing-1;
+    max-height: 260px;
+    padding: $spacing-2;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
   }
   
   &__dropdown-item {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: $spacing-2;
+    gap: $spacing-3;
     width: 100%;
     padding: $spacing-2 $spacing-3;
     border: none;
     background: transparent;
     cursor: pointer;
-    text-align: right;
-    transition: background $transition-fast;
-    border-radius: $radius-md;
-    direction: rtl;
+    text-align: left;
+    transition: background-color $transition-fast;
+    border-radius: $radius-lg;
+    direction: ltr;
     
     &:hover {
-      background: var(--color-background-hover);
+      background: var(--color-primary-lighter, rgba(16, 185, 129, 0.08));
     }
     
     &--selected {
-      background: var(--color-background-hover);
-      font-weight: $font-weight-medium;
+      background: var(--color-primary-lighter, rgba(16, 185, 129, 0.12));
     }
+  }
+
+  &__dropdown-item-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__country-name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: var(--color-text-primary);
   }
   
   &__country-dial {
-    font-size: $font-size-sm;
-    color: var(--color-text-secondary);
+    font-size: $font-size-xs;
+    color: var(--color-text-muted);
     font-weight: $font-weight-medium;
+  }
+
+  &__dropdown-check {
+    display: flex;
+    align-items: center;
+    color: var(--color-primary);
+    flex-shrink: 0;
   }
   
   &__field {
     flex: 1;
     width: 100%;
+    min-width: 0;
     height: $input-height;
     padding: 0 $spacing-4;
     border: none;
@@ -483,6 +622,8 @@ watch(
     font-size: $font-size-base;
     color: var(--color-text-primary);
     outline: none;
+    text-align: left;
+    direction: ltr;
     
     &::placeholder {
       color: var(--color-text-muted);

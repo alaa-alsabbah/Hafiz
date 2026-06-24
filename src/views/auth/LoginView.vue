@@ -196,8 +196,22 @@ function goToForgotPassword(): void {
   
   &__remember {
     display: flex;
-    justify-content: flex-end;
+    width: 100%;
+    justify-content: flex-start;
+    direction: rtl;
     margin-top: -$spacing-2;
+
+    :deep(.base-checkbox) {
+      flex-direction: row;
+    }
+
+    :deep(.base-checkbox__label) {
+      order: 1;
+    }
+
+    :deep(.base-checkbox__box) {
+      order: 2;
+    }
   }
   
   &__error {

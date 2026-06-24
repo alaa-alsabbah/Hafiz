@@ -18,6 +18,22 @@ const detailLoading = ref(false)
 const actionLoading = ref<'approve' | 'reject' | null>(null)
 const scoreValue = ref<number>(0)
 const notes = ref('')
+const hoveredStar = ref<number | null>(null)
+
+const activeStarCount = computed(() => {
+  if (hoveredStar.value !== null) return hoveredStar.value
+  const n = Number(scoreValue.value)
+  if (!Number.isFinite(n) || n <= 0) return 0
+  return Math.min(5, Math.round(n))
+})
+
+function setStarRating(star: number) {
+  scoreValue.value = star
+}
+
+function clearStarHover() {
+  hoveredStar.value = null
+}
 
 async function fetchInterviews() {
   loading.value = true
@@ -322,12 +338,32 @@ onMounted(() => fetchInterviews())
             <section class="admin-evaluations__section">
               <h4 class="admin-evaluations__section-title">{{ ADMIN_EVALUATIONS_PAGE.RECITATION_EVAL }}</h4>
               <div class="admin-evaluations__rating-row">
-                <div class="admin-evaluations__rating-stars">
-                  <svg v-for="i in 5" :key="i" class="admin-evaluations__star-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                  </svg>
+                <div
+                  class="admin-evaluations__rating-stars"
+                  @mouseleave="clearStarHover"
+                >
+                  <button
+                    v-for="i in 5"
+                    :key="i"
+                    type="button"
+                    class="admin-evaluations__star-btn"
+                    :class="{ 'admin-evaluations__star-btn--active': i <= activeStarCount }"
+                    :aria-label="`${i} من 5`"
+                    @click="setStarRating(i)"
+                    @mouseenter="hoveredStar = i"
+                  >
+                    <svg
+                      class="admin-evaluations__star"
+                      viewBox="0 0 24 24"
+                      :fill="i <= activeStarCount ? 'currentColor' : 'none'"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    >
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                  </button>
                 </div>
-                <span class="admin-evaluations__rating-pill">{{ (typeof scoreValue === 'number' && !Number.isNaN(scoreValue)) ? String(scoreValue) : ADMIN_EVALUATIONS_PAGE.UNRATED }}</span>
+                <span class="admin-evaluations__rating-pill">{{ activeStarCount > 0 ? String(scoreValue) : ADMIN_EVALUATIONS_PAGE.UNRATED }}</span>
                 <label class="admin-evaluations__score-label">
                   <span>{{ ADMIN_EVALUATIONS_PAGE.SCORE_LABEL }}</span>
                   <input
@@ -725,13 +761,34 @@ onMounted(() => fetchInterviews())
     display: flex;
     align-items: center;
     gap: 4px;
+    direction: rtl;
   }
 
-  &__star-outline {
+  &__star-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #d1d5db;
+    transition: color 0.15s ease, transform 0.15s ease;
+
+    &:hover {
+      transform: scale(1.08);
+    }
+
+    &--active {
+      color: #f59e0b;
+    }
+  }
+
+  &__star {
     width: 24px;
     height: 24px;
-    color: #d1d5db;
-    stroke-width: 1.5;
+    display: block;
+    pointer-events: none;
   }
 
   &__rating-pill {

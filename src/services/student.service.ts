@@ -67,7 +67,7 @@ export interface CalendarEntry {
   id: number
   student_id: number
   due_date: string
-  status: 'تم الإرسال' | 'متأخر' | 'اترك'
+  status: 'تم الإرسال' | 'متأخر' | 'اترك' | 'جديد'
 }
 
 /**
@@ -122,16 +122,16 @@ export async function getActivityLog(): Promise<ApiResponse<ActivityLog[]>> {
 
 /**
  * Get student calendar data (activity status by date)
- * POST with start_date (YYYY-MM-DD) and end_date (YYYY-MM-DD) in body
+ * POST /student/calendar with start_date and end_date (form-data)
  */
 export async function getStudentCalendar(
   startDate: string,
   endDate: string
 ): Promise<ApiResponse<CalendarEntry[]>> {
-  return api.post<CalendarEntry[]>(STUDENT_API_ENDPOINTS.CALENDAR, {
-    start_date: startDate,
-    end_date: endDate,
-  })
+  const formData = new FormData()
+  formData.append('start_date', startDate)
+  formData.append('end_date', endDate)
+  return api.post<CalendarEntry[]>(STUDENT_API_ENDPOINTS.CALENDAR, formData)
 }
 
 /**

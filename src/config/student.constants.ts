@@ -25,6 +25,7 @@ export const ACTIVITY_LOG_LABELS = {
   STATUS_SUBMITTED: 'تم الإرسال',
   STATUS_LATE: 'تقديم متأخر',
   STATUS_LEAVE: 'اترك',
+  STATUS_NEW: 'جديد',
 } as const
 
 export const STUDENT_LEVEL_TABLE_LABELS = {

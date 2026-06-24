@@ -6,10 +6,11 @@ import IconArrowLeft from '@/components/icons/IconArrowLeft.vue'
 import IconArrowRight from '@/components/icons/IconArrowRight.vue'
 import AppLoading from '@/components/common/AppLoading.vue'
 
-// Status priority: اترك (worst) > متأخر > تم الإرسال (best)
+// Status priority: اترك (worst) > متأخر > جديد > تم الإرسال (best)
 const STATUS_PRIORITY: Record<string, number> = {
-  'اترك': 3,
-  'متأخر': 2,
+  'اترك': 4,
+  'متأخر': 3,
+  'جديد': 2,
   'تم الإرسال': 1,
 }
 
@@ -17,6 +18,7 @@ const STATUS_COLORS: Record<string, string> = {
   'تم الإرسال': 'submitted',
   'متأخر': 'late',
   'اترك': 'leave',
+  'جديد': 'new',
 }
 
 const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
@@ -40,20 +42,20 @@ const dateStatusMap = computed(() => {
   return map
 })
 
-// Get start and end dates for API based on displayed month
-function getDateRangeForMonth(year: number, month: number): { start_date: string; end_date: string } {
-  const today = new Date()
-  const startDate = new Date(year, month, 1)
-  const lastDay = new Date(year, month + 1, 0)
-  const endDate =
-    year === today.getFullYear() && month === today.getMonth()
-      ? today
-      : lastDay
+function formatDateLocal(d: Date): string {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
-  const format = (d: Date) => d.toISOString().slice(0, 10)
+// Get start and end dates for API: first day → last day of the displayed month
+function getDateRangeForMonth(year: number, month: number): { start_date: string; end_date: string } {
+  const startDate = new Date(year, month, 1)
+  const endDate = new Date(year, month + 1, 0)
   return {
-    start_date: format(startDate),
-    end_date: format(endDate),
+    start_date: formatDateLocal(startDate),
+    end_date: formatDateLocal(endDate),
   }
 }
 
@@ -94,7 +96,7 @@ const calendarGrid = computed(() => {
   // Fill leading empty cells from previous month
   for (let i = 0; i < startDayOfWeek; i++) {
     const prevMonth = new Date(year, month, -startDayOfWeek + i + 1)
-    const dateStr = prevMonth.toISOString().slice(0, 10)
+    const dateStr = formatDateLocal(prevMonth)
     currentWeek.push({
       date: prevMonth,
       day: prevMonth.getDate(),
@@ -106,7 +108,7 @@ const calendarGrid = computed(() => {
   // Fill current month days
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day)
-    const dateStr = date.toISOString().slice(0, 10)
+    const dateStr = formatDateLocal(date)
     currentWeek.push({
       date,
       day,
@@ -124,7 +126,7 @@ const calendarGrid = computed(() => {
     let nextDay = 1
     while (currentWeek.length < 7) {
       const nextMonth = new Date(year, month + 1, nextDay)
-      const dateStr = nextMonth.toISOString().slice(0, 10)
+      const dateStr = formatDateLocal(nextMonth)
       currentWeek.push({
         date: nextMonth,
         day: nextMonth.getDate(),
@@ -199,6 +201,11 @@ watch(
           </button>
         </div>
         <div class="student-activity-log__legend">
+          <span
+            class="student-activity-log__legend-item student-activity-log__legend-item--new"
+          >
+            {{ ACTIVITY_LOG_LABELS.STATUS_NEW }}
+          </span>
           <span
             class="student-activity-log__legend-item student-activity-log__legend-item--submitted"
           >
@@ -422,6 +429,11 @@ watch(
       background-color: #FFCCCC;
       color: #c62828;
     }
+
+    &--new {
+      background-color: #D6E8FF;
+      color: #1565c0;
+    }
   }
 
   &__calendar {
@@ -507,6 +519,11 @@ watch(
     &--leave {
       background-color: #FFCCCC;
       color: #c62828;
+    }
+
+    &--new {
+      background-color: #D6E8FF;
+      color: #1565c0;
     }
   }
 }

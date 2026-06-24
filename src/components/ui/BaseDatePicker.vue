@@ -56,6 +56,38 @@ const currentMonth = ref(new Date())
 const currentYear = computed(() => currentMonth.value.getFullYear())
 const currentMonthIndex = computed(() => currentMonth.value.getMonth())
 
+const minYear = computed(() => {
+  if (props.min) {
+    const d = new Date(props.min)
+    if (!isNaN(d.getTime())) return d.getFullYear()
+  }
+  return currentYear.value - 100
+})
+
+const maxYear = computed(() => {
+  if (props.max) {
+    const d = new Date(props.max)
+    if (!isNaN(d.getTime())) return d.getFullYear()
+  }
+  return currentYear.value + 10
+})
+
+const yearOptions = computed(() => {
+  const years: number[] = []
+  for (let y = maxYear.value; y >= minYear.value; y--) {
+    years.push(y)
+  }
+  return years
+})
+
+function setCalendarMonth(month: number) {
+  currentMonth.value = new Date(currentYear.value, month, 1)
+}
+
+function setCalendarYear(year: number) {
+  currentMonth.value = new Date(year, currentMonthIndex.value, 1)
+}
+
 const calendarDays = computed(() => {
   const year = currentYear.value
   const month = currentMonthIndex.value
@@ -215,37 +247,40 @@ const hasError = computed(() => !!props.error)
     <Transition name="calendar">
       <div v-if="isOpen" class="base-datepicker__calendar">
         <div class="base-datepicker__calendar-header" dir="ltr">
-          <div class="base-datepicker__calendar-nav-group">
-            <button type="button" class="base-datepicker__calendar-nav base-datepicker__calendar-nav--year" @click="currentMonth = new Date(currentYear - 1, currentMonthIndex, 1)" title="السنة السابقة">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="m11 17-5-5 5-5" />
-                <path d="m18 17-5-5 5-5" />
-              </svg>
-            </button>
-            <button type="button" class="base-datepicker__calendar-nav" @click="previousMonth" title="الشهر السابق">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-            </button>
+          <button type="button" class="base-datepicker__calendar-nav" @click="previousMonth" title="الشهر السابق">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+
+          <div class="base-datepicker__calendar-selects" dir="rtl">
+            <select
+              class="base-datepicker__calendar-select base-datepicker__calendar-select--month"
+              :value="currentMonthIndex"
+              @click.stop
+              @change="setCalendarMonth(Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option v-for="(monthName, index) in months" :key="index" :value="index">
+                {{ monthName }}
+              </option>
+            </select>
+            <select
+              class="base-datepicker__calendar-select base-datepicker__calendar-select--year"
+              :value="currentYear"
+              @click.stop
+              @change="setCalendarYear(Number(($event.target as HTMLSelectElement).value))"
+            >
+              <option v-for="year in yearOptions" :key="year" :value="year">
+                {{ year }}
+              </option>
+            </select>
           </div>
-          
-          <div class="base-datepicker__calendar-title" dir="rtl">
-            {{ months[currentMonthIndex] }} {{ currentYear }}
-          </div>
-          
-          <div class="base-datepicker__calendar-nav-group">
-            <button type="button" class="base-datepicker__calendar-nav" @click="nextMonth" title="الشهر التالي">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            </button>
-            <button type="button" class="base-datepicker__calendar-nav base-datepicker__calendar-nav--year" @click="currentMonth = new Date(currentYear + 1, currentMonthIndex, 1)" title="السنة التالية">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="m13 17 5-5-5-5" />
-                <path d="m6 17 5-5-5-5" />
-              </svg>
-            </button>
-          </div>
+
+          <button type="button" class="base-datepicker__calendar-nav" @click="nextMonth" title="الشهر التالي">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </button>
         </div>
         
         <div class="base-datepicker__calendar-days-header">
@@ -405,6 +440,52 @@ const hasError = computed(() => !!props.error)
     gap: $spacing-2;
     direction: ltr;
     unicode-bidi: isolate;
+  }
+
+  &__calendar-selects {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  &__calendar-select {
+    appearance: none;
+    border: 1px solid var(--color-border);
+    border-radius: $radius-md;
+    background-color: #fff;
+    color: var(--color-text-primary);
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    font-family: inherit;
+    padding: $spacing-2 $spacing-3 $spacing-2 2.25rem;
+    cursor: pointer;
+    text-align: center;
+    direction: rtl;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%234b5563' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 0.625rem center;
+    background-size: 16px 16px;
+
+    &--month {
+      min-width: 132px;
+    }
+
+    &--year {
+      min-width: 108px;
+    }
+
+    &:hover {
+      border-color: var(--color-primary);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px var(--color-primary-lighter);
+    }
   }
   
   &__calendar-nav {

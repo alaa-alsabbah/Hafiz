@@ -380,41 +380,17 @@ const toggleViewMode = () => {
   }
 
   &__cards {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: $spacing-4;
-    overflow-x: auto;
-    padding-bottom: $spacing-2;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
+
+    @include lg {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 
     @include sm-max {
-      flex-direction: column;
-      overflow-x: visible;
-      padding-bottom: 0;
+      grid-template-columns: 1fr;
       gap: $spacing-3;
-    }
-
-    &::-webkit-scrollbar {
-      height: 6px;
-
-      @include sm-max {
-        display: none;
-      }
-    }
-
-    &::-webkit-scrollbar-track {
-      background: var(--color-background);
-      border-radius: $radius-full;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: var(--color-border);
-      border-radius: $radius-full;
-
-      &:hover {
-        background: var(--color-text-muted);
-      }
     }
   }
 
@@ -424,8 +400,8 @@ const toggleViewMode = () => {
     padding: $spacing-6;
     padding-bottom: 0;
     box-shadow: $shadow-md;
-    min-width: 320px;
-    max-width: 320px;
+    width: 100%;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: $spacing-4;
@@ -433,16 +409,11 @@ const toggleViewMode = () => {
     overflow: hidden;
 
     @include md-max {
-      min-width: 280px;
-      max-width: 280px;
       padding: $spacing-4;
       padding-bottom: 0;
     }
 
     @include sm-max {
-      min-width: 100%;
-      max-width: 100%;
-      width: 100%;
       padding: $spacing-3;
       padding-bottom: 0;
       gap: $spacing-3;

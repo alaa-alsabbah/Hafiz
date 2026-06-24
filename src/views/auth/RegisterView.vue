@@ -810,6 +810,31 @@ function nextMonth() {
   calendarMonth.value = new Date(calendarMonth.value.getFullYear(), calendarMonth.value.getMonth() + 1, 1)
 }
 
+const appointmentMinYear = computed(() => new Date().getFullYear())
+const appointmentMaxYear = computed(() => new Date().getFullYear() + 2)
+
+const appointmentYearOptions = computed(() => {
+  const years: number[] = []
+  for (let y = appointmentMaxYear.value; y >= appointmentMinYear.value; y--) {
+    years.push(y)
+  }
+  return years
+})
+
+function setAppointmentCalendarMonth(month: number) {
+  if (!calendarMonth.value) {
+    calendarMonth.value = new Date()
+  }
+  calendarMonth.value = new Date(calendarMonth.value.getFullYear(), month, 1)
+}
+
+function setAppointmentCalendarYear(year: number) {
+  if (!calendarMonth.value) {
+    calendarMonth.value = new Date()
+  }
+  calendarMonth.value = new Date(year, calendarMonth.value.getMonth(), 1)
+}
+
 function formatSelectedDate(date: Date): string {
   const dayNames = ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة']
   const dayName = dayNames[date.getDay()]
@@ -1372,8 +1397,25 @@ watch(selectedRole, (role) => {
                         <path d="m9 18 6-6-6-6" />
                       </svg>
                     </button>
-                    <div class="register-view__calendar-title">
-                      {{ calendarMonth ? `${months[calendarMonth.getMonth()]} ${calendarMonth.getFullYear()}` : '' }}
+                    <div class="register-view__calendar-selects">
+                      <select
+                        class="register-view__calendar-select register-view__calendar-select--month"
+                        :value="calendarMonth?.getMonth() ?? new Date().getMonth()"
+                        @change="setAppointmentCalendarMonth(Number(($event.target as HTMLSelectElement).value))"
+                      >
+                        <option v-for="(monthName, index) in months" :key="index" :value="index">
+                          {{ monthName }}
+                        </option>
+                      </select>
+                      <select
+                        class="register-view__calendar-select register-view__calendar-select--year"
+                        :value="calendarMonth?.getFullYear() ?? new Date().getFullYear()"
+                        @change="setAppointmentCalendarYear(Number(($event.target as HTMLSelectElement).value))"
+                      >
+                        <option v-for="year in appointmentYearOptions" :key="year" :value="year">
+                          {{ year }}
+                        </option>
+                      </select>
                     </div>
                     <button type="button" class="register-view__calendar-nav" @click="nextMonth">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2478,6 +2520,52 @@ watch(selectedRole, (role) => {
   font-size: 1.125rem;
   font-weight: 700;
   color: var(--color-text-primary);
+}
+
+.register-view__calendar-selects {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.register-view__calendar-select {
+  appearance: none;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background-color: #fff;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+  cursor: pointer;
+  text-align: center;
+  direction: rtl;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%234b5563' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 0.625rem center;
+  background-size: 16px 16px;
+
+  &--month {
+    min-width: 132px;
+  }
+
+  &--year {
+    min-width: 108px;
+  }
+
+  &:hover {
+    border-color: #14a274;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #14a274;
+    box-shadow: 0 0 0 2px rgba(20, 162, 116, 0.15);
+  }
 }
 
 .register-view__calendar-days-header {
